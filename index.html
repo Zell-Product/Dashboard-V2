@@ -277,6 +277,13 @@
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+        .text-red-600 { color: #dc2626; }
+        .bg-red-50 { background-color: #fef2f2; }
+        .border-red-300 { border-color: #fca5a5; }
+        .text-red-500 { color: #ef4444; }
+        .bg-yellow-50 { background-color: #fffbeb; }
+        .border-yellow-300 { border-color: #fde68a; }
+        .text-yellow-600 { color: #d97706; }
     </style>
 </head>
 <body>
@@ -453,8 +460,9 @@
             if (error) {
                 return React.createElement('div', { className: 'error-container' },
                     React.createElement('div', { className: 'text-center p-8 bg-red-50 border border-red-300 rounded-2xl shadow-lg max-w-lg mx-auto' },
-                        React.createElement('h3', { className: 'text-2xl font-bold text-red-600 mb-4' }, 'Error'),
-                        React.createElement('p', { className: 'text-lg text-red-500' }, error)
+                        React.createElement('h3', { className: 'text-2xl font-bold text-red-600 mb-4' }, 'Data Loading Error'),
+                        React.createElement('p', { className: 'text-lg text-red-500' }, error),
+                        React.createElement('p', { className: 'text-sm text-gray-500 mt-4' }, 'Please ensure the Google Sheets are publicly accessible via the provided links and try again.')
                     )
                 );
             }
