@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overall Metrics Dashboard</title>
-    <!-- Correct favicon link for a .png file -->
-    <link rel="icon" href="favicon.png" type="image/png">
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
@@ -31,12 +37,11 @@
             box-sizing: border-box;
             color: var(--text-color);
             min-height: 100vh;
-            /* Prevent body from scrolling */
+            /* Prevent body from scrolling on desktop */
             overflow: hidden; 
         }
-        
+
         .dashboard-container {
-            /* Use a flexbox container to hold the fixed sidebar and the scrollable content */
             display: flex;
             min-height: 100vh;
         }
@@ -51,7 +56,6 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 12px rgba(0,0,0,0.1);
-            /* Fixed position for the sidebar */
             position: fixed;
             top: 0;
             left: 0;
@@ -68,12 +72,14 @@
         }
 
         .sidebar-nav-item {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             padding: 1rem 1.25rem;
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             color: var(--text-color);
-            font-size: 1.4rem; /* Increased font size as requested */
+            font-size: 1.4rem;
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -90,13 +96,21 @@
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        
+        .sidebar-nav-item.active .nav-icon {
+            color: #ffffff;
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            color: var(--primary-purple);
+        }
 
         .main-content {
-            /* Push content to the right to make space for the fixed sidebar */
             margin-left: var(--sidebar-width);
             flex-grow: 1;
             padding: 3rem;
-            overflow-y: auto; /* Allow the content to scroll */
+            overflow-y: auto;
             height: 100vh;
         }
         
@@ -109,6 +123,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: 1px solid var(--border-color);
         }
+        
         .top-level-box-title {
             font-size: 2rem;
             font-weight: 700;
@@ -126,30 +141,104 @@
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(108, 30, 116, 0.1);
         }
+        
         .sub-box-title {
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--heading-color);
             margin-bottom: 1.5rem;
         }
+        
         .metric-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.75rem 0;
             border-bottom: 1px solid rgba(108, 30, 116, 0.15);
+            transition: transform 0.2s ease-in-out;
         }
+
+        .metric-item:hover {
+            transform: translateX(5px);
+        }
+        
         .metric-item:last-child {
             border-bottom: none;
         }
+        
         .metric-label {
             font-size: 1.1rem;
             color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
+        
         .metric-value {
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--primary-purple);
+        }
+        
+        .scorecard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .scorecard {
+            background-color: var(--card-background);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .scorecard:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .scorecard-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--heading-color);
+        }
+        
+        .scorecard-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary-purple);
+            margin: 1rem 0;
+        }
+        
+        .scorecard-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .trend-positive {
+            color: #28a745;
+        }
+        
+        .trend-negative {
+            color: #dc3545;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 2rem;
+            position: relative;
         }
         
         .error-message-box {
@@ -193,11 +282,12 @@
         .hidden {
             display: none !important;
         }
-
+        
         /* Responsive styles for mobile */
         @media (max-width: 768px) {
             body {
-                overflow: auto; /* Allow body scrolling on mobile */
+                overflow-x: hidden;
+                overflow-y: auto;
             }
             .dashboard-container {
                 flex-direction: column;
@@ -209,22 +299,25 @@
                 justify-content: space-around;
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
-                padding: 1.5rem 1rem;
-                /* Reset fixed positioning for mobile */
+                padding: 1rem 0.5rem;
                 position: static;
                 height: auto;
             }
             .sidebar-logo {
                 display: none;
             }
+            .sidebar-nav-item {
+                padding: 0.75rem 1rem;
+                font-size: 1.2rem;
+            }
             .main-content {
                 padding: 1.5rem;
-                /* Reset margin for mobile to take full width */
                 margin-left: 0;
                 height: auto;
             }
             .top-level-box-title {
                 text-align: center;
+                font-size: 1.75rem;
             }
             .sub-box-title {
                 text-align: center;
@@ -239,16 +332,23 @@
         <aside class="sidebar">
             <div class="sidebar-logo">Dashboard</div>
             <nav>
-                <a href="#" class="sidebar-nav-item active" data-target="overview">Overview</a>
-                <a href="#" class="sidebar-nav-item" data-target="daily">Daily Metrics</a>
-                <a href="#" class="sidebar-nav-item" data-target="settings">Settings</a>
+                <a href="#" class="sidebar-nav-item active" data-target="overview">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" data-target="daily">
+                    <i class="fas fa-calendar-day nav-icon"></i>
+                    <span>Daily Metrics</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" data-target="settings">
+                    <i class="fas fa-cog nav-icon"></i>
+                    <span>Settings</span>
+                </a>
             </nav>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- No main title is present to prevent duplication -->
-
             <!-- Section containers -->
             <div id="overview-section" class="section-container">
                 <!-- Overview metrics will be rendered here -->
@@ -272,6 +372,10 @@
     <script>
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
         const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+        
+        // This will store the Chart.js instance so we can destroy and re-create it
+        let dailyChartInstance = null;
+        let overviewChartInstance = null;
 
         function showLoadingIndicator(containerId) {
             const container = document.getElementById(containerId);
@@ -287,6 +391,34 @@
                     <p class="mt-4">Please check the console for more details.</p>
                 </div>
             `;
+        }
+        
+        // This is a more robust CSV parser
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                console.error("CSV data has fewer than 2 lines (header + data).");
+                return [];
+            }
+            const headers = lines[0].split(',').map(header => header.trim());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                // Regex to handle commas inside quoted strings
+                const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
+                if (values) {
+                    const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
+                    if (trimmedValues.length === headers.length) {
+                        const obj = {};
+                        for (let j = 0; j < headers.length; j++) {
+                            obj[headers[j]] = trimmedValues[j];
+                        }
+                        data.push(obj);
+                    }
+                }
+            }
+            return data;
         }
 
         async function fetchCSVData(url) {
@@ -310,39 +442,15 @@
             }
         }
         
-        function parseCSV(csv) {
-            const lines = csv.split('\n').filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                console.error("CSV data has fewer than 2 lines (header + data).");
-                return [];
-            }
-            const headers = lines[0].split(',').map(header => header.trim());
-            const data = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                // Regex to handle commas inside quoted strings
-                const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
-                const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
-
-                if (trimmedValues.length === headers.length) {
-                    const obj = {};
-                    for (let j = 0; j < headers.length; j++) {
-                        obj[headers[j]] = trimmedValues[j];
-                    }
-                    data.push(obj);
-                }
-            }
-            return data;
-        }
-
         function renderOverviewDashboard(data) {
             const container = document.getElementById('overview-section');
-            container.innerHTML = '';
+            container.innerHTML = ''; // Clear previous content
+            
             if (!data || data.length === 0) {
-                showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
+                showFailureMessage('overview-section', 'Failed to load Overview Metrics data.');
                 return;
             }
+            
             const groupedData = data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
@@ -352,21 +460,33 @@
                 return acc;
             }, {});
 
+            // Iterate through each top-level box and render it
             for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
                 const topLevelBoxEl = document.createElement('div');
                 topLevelBoxEl.className = "top-level-box";
                 topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
+                
                 const subBoxesContainer = document.createElement('div');
                 subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+
+                // Iterate through each sub-box and its metrics
                 for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                     const subBoxEl = document.createElement('div');
                     subBoxEl.className = "sub-box";
                     subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
                     const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                    
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
                         const metricEl = document.createElement('div');
                         metricEl.className = "metric-item";
-                        metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
+                        // Using a simple icon for the metric items
+                        metricEl.innerHTML = `
+                            <span class="metric-label">
+                                <i class="fas fa-database text-purple-500"></i>
+                                ${metric['Data Header']}
+                            </span>
+                            <span class="metric-value">${metric['Value']}</span>
+                        `;
                         metricsContainer.appendChild(metricEl);
                     });
                     subBoxesContainer.appendChild(subBoxEl);
@@ -375,42 +495,151 @@
                 container.appendChild(topLevelBoxEl);
             }
         }
-
+        
         function renderDailyMetricsDashboard(data) {
             const container = document.getElementById('daily-section');
             container.innerHTML = '';
+            
             if (!data || data.length === 0) {
-                 showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
+                showFailureMessage('daily-section', 'Failed to load Daily Metrics data.');
                 return;
             }
 
+            // Create a top-level box for the entire section
             const topLevelBoxEl = document.createElement('div');
             topLevelBoxEl.className = "top-level-box";
             topLevelBoxEl.innerHTML = `
                 <h2 class="top-level-box-title">Daily Metrics</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
             `;
-            const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
-
-            data.forEach(metric => {
-                if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
-                    return;
+            container.appendChild(topLevelBoxEl);
+            
+            // Generate a line chart for the daily data
+            const dailyUserChartData = data.filter(d => d['Cumulative'] === 'Total Users');
+            if (dailyUserChartData.length > 0) {
+                const dates = dailyUserChartData.map(d => d['Date']);
+                const webData = dailyUserChartData.map(d => d['WEB']);
+                const androidData = dailyUserChartData.map(d => d['ANDROID']);
+                const iosData = dailyUserChartData.map(d => d['iOS']);
+                
+                const chartBox = document.createElement('div');
+                chartBox.className = "sub-box mb-8";
+                chartBox.innerHTML = `
+                    <h3 class="sub-box-title">Daily User Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="dailyUserChart"></canvas>
+                    </div>
+                `;
+                topLevelBoxEl.appendChild(chartBox);
+                
+                // Destroy previous chart instance if it exists
+                if (dailyChartInstance) {
+                    dailyChartInstance.destroy();
                 }
+                
+                // Create a new chart
+                const ctx = document.getElementById('dailyUserChart').getContext('2d');
+                dailyChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'Web Users',
+                                data: webData,
+                                borderColor: 'rgba(108, 30, 116, 1)',
+                                backgroundColor: 'rgba(108, 30, 116, 0.2)',
+                                tension: 0.4,
+                                fill: true,
+                            },
+                            {
+                                label: 'Android Users',
+                                data: androidData,
+                                borderColor: 'rgba(25, 126, 203, 1)',
+                                backgroundColor: 'rgba(25, 126, 203, 0.2)',
+                                tension: 0.4,
+                                fill: true,
+                            },
+                            {
+                                label: 'iOS Users',
+                                data: iosData,
+                                borderColor: 'rgba(235, 100, 100, 1)',
+                                backgroundColor: 'rgba(235, 100, 100, 0.2)',
+                                tension: 0.4,
+                                fill: true,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                            },
+                            title: {
+                                display: false,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(108, 30, 116, 0.1)'
+                                },
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Now render the individual daily metrics in sub-boxes
+            const dailyMetricsContainer = document.createElement('div');
+            dailyMetricsContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+
+            // Group by metric name
+            const groupedMetrics = data.reduce((acc, row) => {
+                const metricName = row['Cumulative'];
+                if (metricName && metricName !== 'Total Users' && metricName.trim() !== '') {
+                    if (!acc[metricName]) { acc[metricName] = []; }
+                    acc[metricName].push(row);
+                }
+                return acc;
+            }, {});
+
+            for (const [metricName, entries] of Object.entries(groupedMetrics)) {
                 const subBoxEl = document.createElement('div');
                 subBoxEl.className = "sub-box";
-                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
+                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3><div class="space-y-3"></div>`;
                 const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                
+                // Sort to show the latest date first
+                entries.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+
+                // Take the most recent entry for each platform for a snapshot view
+                const latestEntry = entries[0];
                 ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
-                    if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
+                    if (latestEntry[platform] && latestEntry[platform] !== 'NA' && latestEntry[platform].trim() !== '') {
                         const metricEl = document.createElement('div');
                         metricEl.className = "metric-item";
-                        metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
+                        metricEl.innerHTML = `
+                            <span class="metric-label">
+                                <i class="fas fa-chart-bar text-purple-500"></i>
+                                ${platform}
+                            </span>
+                            <span class="metric-value">${latestEntry[platform]}</span>
+                        `;
                         metricsContainer.appendChild(metricEl);
                     }
                 });
-                subBoxesContainer.appendChild(subBoxEl);
-            });
-            container.appendChild(topLevelBoxEl);
+                dailyMetricsContainer.appendChild(subBoxEl);
+            }
+
+            topLevelBoxEl.appendChild(dailyMetricsContainer);
         }
         
         function handleNavigation(overviewData, dailyMetricsData) {
@@ -453,7 +682,6 @@
             
             updateLastUpdatedTime();
 
-            // Fetch both data sources in parallel
             const [overviewCsv, dailyMetricsCsv] = await Promise.all([
                 fetchCSVData(OVERVIEW_URL),
                 fetchCSVData(DAILY_METRICS_URL)
