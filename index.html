@@ -64,7 +64,7 @@
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             color: var(--text-color);
-            font-size: 1.1rem;
+            font-size: 1.2rem; /* Increased font size */
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -170,6 +170,13 @@
             align-items: center;
             height: 50vh;
         }
+        
+        .last-updated-text {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
 
         /* Responsive styles for mobile */
         @media (max-width: 768px) {
@@ -215,7 +222,7 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <h1 class="text-4xl font-extrabold text-gray-800 mb-8">Dashboard Home</h1>
+            <!-- The H1 title has been removed to fix the duplicate "Dashboard" heading -->
 
             <!-- Section containers -->
             <div id="overview-section" class="section-container">
@@ -232,6 +239,8 @@
                     <p class="text-gray-600">This section is a placeholder for user settings.</p>
                 </div>
             </div>
+
+            <div id="last-updated-footer" class="last-updated-text"></div>
         </main>
     </div>
 
@@ -382,6 +391,7 @@
         function handleNavigation(overviewData, dailyMetricsData) {
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             const sections = document.querySelectorAll('.section-container');
+            const mainTitle = document.getElementById('main-title'); // If you add a title later
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -399,10 +409,25 @@
                 });
             });
         }
+        
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const formattedTime = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
+        }
 
         async function initializeDashboard() {
             showLoadingIndicator('overview-section');
             showLoadingIndicator('daily-section');
+            
+            updateLastUpdatedTime();
 
             // Fetch both data sources in parallel
             const [overviewCsv, dailyMetricsCsv] = await Promise.all([
