@@ -8,8 +8,6 @@
     <link rel="icon" href="favicon.png" type="image/png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide for icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide-js@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
@@ -295,6 +293,9 @@
         </main>
     </div>
 
+    <!-- Lucide for icons - Moved to the end of the body to ensure it's loaded before our script tries to use it. -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide-js@latest"></script>
+    
     <script>
         // URLs for the public Google Sheets data
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
@@ -337,8 +338,7 @@
                 return text;
             } catch (error) {
                 console.error("Could not fetch CSV data:", error);
-                showFailureMessage('overview-section', 'Could not retrieve data from the server.');
-                showFailureMessage('daily-section', 'Could not retrieve data from the server.');
+                // The dashboard itself will handle rendering a failure message
                 return null;
             }
         }
@@ -452,7 +452,7 @@
 
         // Main function to handle all navigation and content rendering
         async function initializeDashboard() {
-            // Replace lucide icons with SVG
+            // This is the fix: we now know lucide.js is loaded
             lucide.createIcons();
 
             // Set initial loading state
