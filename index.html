@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="scroll-behavior: smooth;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -275,31 +275,31 @@
         <aside class="sidebar">
             <div class="sidebar-logo">Dashboard</div>
             <nav>
-                <a href="#" class="sidebar-nav-item active" data-target="overview">Overview</a>
-                <a href="#" class="sidebar-nav-item" data-target="daily">Daily Metrics</a>
-                <a href="#" class="sidebar-nav-item" data-target="settings">Settings</a>
+                <!-- These are now anchor links to the sections -->
+                <a href="#overview-section" class="sidebar-nav-item active">Overview</a>
+                <a href="#daily-section" class="sidebar-nav-item">Daily Metrics</a>
+                <a href="#settings-section" class="sidebar-nav-item">Settings</a>
             </nav>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- No main title is present to prevent duplication -->
-
-            <!-- Section containers -->
-            <div id="overview-section" class="section-container">
-                <!-- Overview metrics will be rendered here -->
-            </div>
+            <!-- All content is now in a single vertical scrollable view -->
             
-            <div id="daily-section" class="section-container hidden">
+            <section id="overview-section" class="section-container">
+                <!-- Overview metrics will be rendered here -->
+            </section>
+            
+            <section id="daily-section" class="section-container">
                 <!-- Daily metrics will be rendered here -->
-            </div>
+            </section>
 
-            <div id="settings-section" class="section-container hidden">
+            <section id="settings-section" class="section-container">
                 <div class="top-level-box">
                     <h2 class="top-level-box-title">Settings</h2>
                     <p class="text-gray-600">This section is a placeholder for user settings.</p>
                 </div>
-            </div>
+            </section>
 
             <div id="last-updated-footer" class="last-updated-text"></div>
         </main>
@@ -401,6 +401,7 @@
          */
         function renderOverviewDashboard(data) {
             const container = document.getElementById('overview-section');
+            if (!container) return;
             container.innerHTML = '';
             if (!data || data.length === 0) {
                 showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
@@ -505,6 +506,7 @@
          */
         function renderDailyMetricsDashboard(data) {
             const container = document.getElementById('daily-section');
+            if (!container) return;
             container.innerHTML = '';
             if (!data || data.length === 0) {
                  showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
@@ -609,32 +611,6 @@
         }
         
         /**
-         * Handles the navigation logic for the sidebar.
-         * @param {Array<Object>} overviewData The data for the overview section.
-         * @param {Array<Object>} dailyMetricsData The data for the daily metrics section.
-         */
-        function handleNavigation(overviewData, dailyMetricsData) {
-            const navItems = document.querySelectorAll('.sidebar-nav-item');
-            const sections = document.querySelectorAll('.section-container');
-            navItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = item.dataset.target + '-section';
-                    navItems.forEach(nav => nav.classList.remove('active'));
-                    item.classList.add('active');
-                    sections.forEach(section => section.classList.add('hidden'));
-                    document.getElementById(targetId).classList.remove('hidden');
-
-                    if (item.dataset.target === 'overview') {
-                        renderOverviewDashboard(overviewData);
-                    } else if (item.dataset.target === 'daily') {
-                        renderDailyMetricsDashboard(dailyMetricsData);
-                    }
-                });
-            });
-        }
-        
-        /**
          * Updates the "Last updated" timestamp on the footer.
          */
         function updateLastUpdatedTime() {
@@ -657,7 +633,7 @@
          * Initializes the dashboard by fetching data and rendering the initial view.
          */
         async function initializeDashboard() {
-            // Display loading indicators
+            // Display loading indicators for both sections
             showLoadingIndicator('overview-section');
             showLoadingIndicator('daily-section');
             updateLastUpdatedTime();
@@ -672,15 +648,25 @@
             const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
             const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
 
-            // Render the initial dashboard view (Overview)
+            // Render both dashboards on the single page
             renderOverviewDashboard(overviewData);
+            renderDailyMetricsDashboard(dailyMetricsData);
             
-            // Set up navigation after all data is ready
-            handleNavigation(overviewData, dailyMetricsData);
+            // Re-apply the active state to the first nav item since we have a single view now
+            document.querySelector('.sidebar-nav-item').classList.add('active');
         }
-
-        // Start the application after the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', initializeDashboard);
+        
+        // Add event listener for navigation to highlight the current section
+        document.addEventListener('DOMContentLoaded', () => {
+             const navItems = document.querySelectorAll('.sidebar-nav-item');
+             navItems.forEach(item => {
+                 item.addEventListener('click', (e) => {
+                     navItems.forEach(nav => nav.classList.remove('active'));
+                     item.classList.add('active');
+                 });
+             });
+             initializeDashboard();
+        });
     </script>
 </body>
 </html>
