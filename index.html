@@ -8,8 +8,7 @@
     <link rel="icon" href="favicon.png" type="image/png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Recharts and Lucide for icons -->
-    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
+    <!-- Lucide for icons -->
     <script src="https://cdn.jsdelivr.net/npm/lucide-js@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -34,6 +33,7 @@
             color: var(--text-color);
             min-height: 100vh;
             overflow-x: hidden;
+            scroll-behavior: smooth; /* Smooth scroll behavior for anchor links */
         }
         
         .dashboard-container {
@@ -248,13 +248,13 @@
                         Overview
                     </div>
                 </a>
-                <a href="#" class="sidebar-nav-item" data-target="general-reports">
+                <div class="sidebar-nav-item" data-target="general-reports-toggle">
                     <div class="sidebar-nav-item-content">
                         <i data-lucide="bar-chart-2" class="w-6 h-6 mr-4"></i>
                         General Reports
                     </div>
                     <i data-lucide="chevron-right" class="w-6 h-6 transition-transform duration-300"></i>
-                </a>
+                </div>
                 <div class="sidebar-nav-nested" id="general-reports-nested">
                     <a href="#daily-section" class="sidebar-nav-item" data-target="daily">
                         Daily Metrics
@@ -428,39 +428,40 @@
             });
             container.appendChild(topLevelBoxEl);
         }
-        
+
         // Handles navigation clicks and smooth scrolling
         function handleNavigation(overviewData, dailyMetricsData) {
-            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            const navItems = document.querySelectorAll('.sidebar-nav-item[data-target]');
             const sections = document.querySelectorAll('.section-container');
-            const generalReportsNav = document.querySelector('[data-target="general-reports"]');
+            const generalReportsToggle = document.querySelector('[data-target="general-reports-toggle"]');
             const generalReportsNested = document.getElementById('general-reports-nested');
-            const chevronIcon = generalReportsNav.querySelector('i[data-lucide="chevron-right"]');
+            const chevronIcon = generalReportsToggle.querySelector('i[data-lucide="chevron-right"]');
             
+            // Set up click listeners for the main navigation items
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
-                    // Prevent default anchor link behavior for smooth scrolling
                     e.preventDefault();
                     
-                    const targetId = item.getAttribute('href').substring(1);
-                    const targetSection = document.getElementById(targetId);
-                    
-                    if (targetSection) {
-                        // Handle active class for navigation items
-                        navItems.forEach(nav => nav.classList.remove('active'));
-                        item.classList.add('active');
-                        
-                        // Hide all sections except the target
-                        sections.forEach(section => section.classList.add('hidden'));
-                        targetSection.classList.remove('hidden');
+                    const targetData = item.dataset.target;
+                    const targetSectionId = item.getAttribute('href')?.substring(1);
 
-                        // Smooth scroll to the section
+                    // Deactivate all nav items
+                    document.querySelectorAll('.sidebar-nav-item').forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Hide all sections
+                    sections.forEach(section => section.classList.add('hidden'));
+
+                    // Show the correct section and scroll to it
+                    if (targetSectionId) {
+                        const targetSection = document.getElementById(targetSectionId);
+                        targetSection.classList.remove('hidden');
                         targetSection.scrollIntoView({ behavior: 'smooth' });
 
                         // Render content for the active section
-                        if (item.dataset.target === 'overview') {
+                        if (targetData === 'overview') {
                             renderOverviewDashboard(overviewData);
-                        } else if (item.dataset.target === 'daily') {
+                        } else if (targetData === 'daily') {
                             renderDailyMetricsDashboard(dailyMetricsData);
                         }
                     }
@@ -468,7 +469,7 @@
             });
 
             // Handle the collapsible "General Reports" section
-            generalReportsNav.addEventListener('click', (e) => {
+            generalReportsToggle.addEventListener('click', (e) => {
                 e.preventDefault();
                 generalReportsNested.classList.toggle('expanded');
                 chevronIcon.classList.toggle('rotate-90');
@@ -495,6 +496,7 @@
             
             updateLastUpdatedTime();
 
+            // Fetch both data sources in parallel
             const [overviewCsv, dailyMetricsCsv] = await Promise.all([
                 fetchCSVData(OVERVIEW_URL),
                 fetchCSVData(DAILY_METRICS_URL)
@@ -503,6 +505,7 @@
             const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
             const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
 
+            // Initially render the overview dashboard
             renderOverviewDashboard(overviewData);
             handleNavigation(overviewData, dailyMetricsData);
         }
