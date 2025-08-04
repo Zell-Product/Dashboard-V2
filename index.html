@@ -1,245 +1,1400 @@
-import React, { useState } from 'react';
-import {
-  Camera,
-  Shapes,
-  Text,
-  Palette,
-  Ruler,
-  ImagePlus,
-  Loader2,
-  AlertCircle
-} from 'lucide-react';
+<!DOCTYPE html>
 
-// Use this for local development if needed, it will be automatically populated in the canvas environment.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+<html lang="en">
 
-// Define the API URL for the model
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent';
+<head>
 
-// Box component for displaying different analysis results
-const Box = ({ title, content, icon: IconComponent }) => (
-  <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-    <div className="flex items-center mb-4">
-      {IconComponent && <IconComponent className="text-blue-500 mr-3 w-6 h-6" />}
-      <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-    </div>
-    <div className="text-gray-600 space-y-2">
-      {content.length > 0 ? (
-        <ul className="list-disc list-inside space-y-1">
-          {content.map((item, index) => (
-            <li key={index} className="text-gray-700">{item}</li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-500 italic">No information available.</p>
-      )}
-    </div>
-  </div>
-);
+    <meta charset="UTF-8">
 
-// Main App component
-const App = () => {
-  const [image, setImage] = useState(null);
-  const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  // Handle file input changes
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result.split(',')[1]); // Store base64 data without the prefix
-        setAnalysis(null);
-        setError(null);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    <title>Overall Metrics Dashboard</title>
 
-  // Function to make API call with exponential backoff
-  const makeApiCall = async (prompt, retries = 3, delay = 1000) => {
-    let lastError = null;
-    for (let i = 0; i < retries; i++) {
-      try {
-        const payload = {
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: 'image/png',
-                    data: image,
-                  },
-                },
-              ],
-            },
-          ],
-        };
+   
 
-        const apiKey = ''; // Will be populated by the canvas environment
-        const response = await fetch(`${API_URL}?key=${apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+    <!-- Tailwind CSS CDN -->
 
-        if (!response.ok) {
-          throw new Error(`API call failed with status: ${response.status}`);
-        }
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        const result = await response.json();
-        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
-          return result.candidates[0].content.parts[0].text;
-        } else {
-          throw new Error('No candidate found in the API response.');
-        }
-      } catch (e) {
-        lastError = e;
-        if (i < retries - 1) {
-          await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
-        }
-      }
-    }
-    throw lastError;
-  };
+   
 
-  // Function to analyze the image
-  const analyzeImage = async () => {
-    if (!image) {
-      setError("Please upload an image first.");
-      return;
-    }
+    <!-- Font Awesome CDN for icons -->
 
-    setLoading(true);
-    setError(null);
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    try {
-      // Use the LLM to analyze various aspects of the image
-      const analysisPrompt =
-        'Based on the provided image, provide a detailed analysis on the following aspects, presented as a list. If you cannot find information for a category, state "No information available.". ' +
-        '1. **Object and Scene Recognition**: List the primary objects and the overall scene or setting (e.g., "A dog sitting in a park"). ' +
-        '2. **Color Palette and Aesthetics**: Describe the main colors, overall mood, and aesthetic style (e.g., "Muted tones, warm and cozy atmosphere"). ' +
-        '3. **Text and Labels**: Identify any visible text or labels (e.g., "Text on a sign says: \'Welcome\'"). ' +
-        '4. **Dimensions and Composition**: Describe the image\'s composition, perspective, and any notable spatial relationships (e.g., "Subject is in the center, close-up shot"). ' +
-        '5. **Image Quality and Details**: Comment on the quality, lighting, and any fine details (e.g., "Sharp focus, bright natural light, slight blur in the background"). ';
+   
 
-      const rawAnalysis = await makeApiCall(analysisPrompt);
+    <!-- Chart.js CDN for graphs -->
 
-      // Parse the raw analysis text into a structured format
-      const parsedAnalysis = parseAnalysis(rawAnalysis);
-      setAnalysis(parsedAnalysis);
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    } catch (e) {
-      console.error("Error during image analysis:", e);
-      setError("Failed to analyze the image. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Helper function to parse the raw text response into a structured object
-  const parseAnalysis = (text) => {
-    const sections = text.split(/\d+\. \*\*(.*?)\*\*: /).slice(1);
-    const analysisObject = {};
-    for (let i = 0; i < sections.length; i += 2) {
-      const title = sections[i];
-      const content = sections[i + 1].split('\n').filter(line => line.trim().length > 0);
-      analysisObject[title.replace(/\s/g, '_').toLowerCase()] = content;
-    }
-    return analysisObject;
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800 p-8 flex items-center justify-center">
-      <div className="max-w-4xl w-full bg-gray-100 rounded-3xl shadow-2xl p-8 lg:p-12">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-2">Image Insight</h1>
-          <p className="text-lg text-gray-600">Upload an image to get a detailed analysis.</p>
-        </header>
+    <style>
 
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-full max-w-sm h-64 border-4 border-dashed border-gray-300 rounded-2xl flex items-center justify-center relative bg-gray-200 overflow-hidden">
-            {image ? (
-              <img src={`data:image/png;base64,${image}`} alt="Uploaded" className="object-contain w-full h-full" />
-            ) : (
-              <div className="text-center text-gray-500 p-4">
-                <ImagePlus className="w-16 h-16 mx-auto mb-3" />
-                <p className="font-medium">Drag & drop or click to upload</p>
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              onChange={handleImageChange}
-            />
-          </div>
-          <button
-            onClick={analyzeImage}
-            disabled={loading || !image}
-            className={`mt-6 px-8 py-3 rounded-full text-white font-bold text-lg shadow-lg transform transition-all duration-300
-              ${image ? 'bg-blue-600 hover:bg-blue-700 hover:scale-105' : 'bg-gray-400 cursor-not-allowed'}
-              flex items-center justify-center`}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin mr-3" />
-                Analyzing...
-              </>
-            ) : (
-              'Analyze Image'
-            )}
-          </button>
-        </div>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        {error && (
-          <div className="mb-8 p-4 bg-red-100 text-red-700 rounded-xl flex items-center shadow-md">
-            <AlertCircle className="w-6 h-6 mr-3" />
-            <span className="font-medium">{error}</span>
-          </div>
-        )}
+       
 
-        {analysis && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <Box
-              title="Object and Scene Recognition"
-              content={analysis.object_and_scene_recognition}
-              icon={Camera}
-            />
-            <Box
-              title="Color Palette and Aesthetics"
-              content={analysis.color_palette_and_aesthetics}
-              icon={Palette}
-            />
-            <Box
-              title="Text and Labels"
-              content={analysis.text_and_labels}
-              icon={Text}
-            />
-            <Box
-              title="Dimensions and Composition"
-              content={analysis.dimensions_and_composition}
-              icon={Ruler}
-            />
-            <Box
-              title="Image Quality and Details"
-              content={analysis.image_quality_and_details}
-              icon={Shapes}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+        /* Define theme colors for a light, iOS-inspired Glass UI */
 
-export default App;
+        :root {
+
+            --primary-purple: #6c1e74;
+
+            --light-background: #f0f4f9;
+
+            --card-background: rgba(255, 255, 255, 0.75);
+
+            --border-color: rgba(108, 30, 116, 0.2);
+
+            --text-color: #374151;
+
+            --heading-color: #1f2937;
+
+            --sidebar-width: 280px;
+
+        }
+
+
+
+        body {
+
+            font-family: 'Inter', sans-serif;
+
+            background-color: var(--light-background);
+
+            background-image: linear-gradient(135deg, #f0f4f9 0%, #e8edf3 100%);
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+            color: var(--text-color);
+
+            min-height: 100vh;
+
+            /* Prevent body from scrolling on desktop */
+
+            overflow: hidden;
+
+        }
+
+
+
+        .dashboard-container {
+
+            display: flex;
+
+            min-height: 100vh;
+
+        }
+
+
+
+        .sidebar {
+
+            width: var(--sidebar-width);
+
+            background-color: var(--card-background);
+
+            backdrop-filter: blur(20px);
+
+            border-right: 1px solid var(--border-color);
+
+            padding: 2rem;
+
+            flex-shrink: 0;
+
+            display: flex;
+
+            flex-direction: column;
+
+            box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            height: 100vh;
+
+            z-index: 10;
+
+        }
+
+
+
+        .sidebar-logo {
+
+            font-size: 1.75rem;
+
+            font-weight: 800;
+
+            color: var(--heading-color);
+
+            margin-bottom: 3rem;
+
+            text-align: center;
+
+        }
+
+
+
+        .sidebar-nav-item {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 1rem;
+
+            padding: 1rem 1.25rem;
+
+            margin-bottom: 0.75rem;
+
+            border-radius: 0.75rem;
+
+            color: var(--text-color);
+
+            font-size: 1.4rem;
+
+            font-weight: 500;
+
+            transition: all 0.2s ease-in-out;
+
+            cursor: pointer;
+
+        }
+
+
+
+        .sidebar-nav-item:hover {
+
+            background-color: rgba(108, 30, 116, 0.1);
+
+            color: var(--primary-purple);
+
+        }
+
+
+
+        .sidebar-nav-item.active {
+
+            background-color: var(--primary-purple);
+
+            color: #ffffff;
+
+            font-weight: 600;
+
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+        }
+
+       
+
+        .sidebar-nav-item.active .nav-icon {
+
+            color: #ffffff;
+
+        }
+
+
+
+        .nav-icon {
+
+            font-size: 1.5rem;
+
+            color: var(--primary-purple);
+
+        }
+
+
+
+        .main-content {
+
+            margin-left: var(--sidebar-width);
+
+            flex-grow: 1;
+
+            padding: 3rem;
+
+            overflow-y: auto;
+
+            height: 100vh;
+
+        }
+
+       
+
+        .top-level-box {
+
+            margin-bottom: 3rem;
+
+            padding: 3rem;
+
+            background-color: var(--card-background);
+
+            backdrop-filter: blur(20px);
+
+            border-radius: 1.5rem;
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+
+            border: 1px solid var(--border-color);
+
+        }
+
+       
+
+        .top-level-box-title {
+
+            font-size: 2rem;
+
+            font-weight: 700;
+
+            color: var(--primary-purple);
+
+            margin-bottom: 2rem;
+
+            border-bottom: 2px solid var(--border-color);
+
+            padding-bottom: 1.5rem;
+
+        }
+
+
+
+        .sub-box {
+
+            padding: 2rem;
+
+            background-color: rgba(108, 30, 116, 0.05);
+
+            backdrop-filter: blur(20px);
+
+            border-radius: 1.25rem;
+
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+
+            border: 1px solid rgba(108, 30, 116, 0.1);
+
+        }
+
+       
+
+        .sub-box-title {
+
+            font-size: 1.5rem;
+
+            font-weight: 600;
+
+            color: var(--heading-color);
+
+            margin-bottom: 1.5rem;
+
+        }
+
+       
+
+        .metric-item {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 0.75rem 0;
+
+            border-bottom: 1px solid rgba(108, 30, 116, 0.15);
+
+            transition: transform 0.2s ease-in-out;
+
+        }
+
+
+
+        .metric-item:hover {
+
+            transform: translateX(5px);
+
+        }
+
+       
+
+        .metric-item:last-child {
+
+            border-bottom: none;
+
+        }
+
+       
+
+        .metric-label {
+
+            font-size: 1.1rem;
+
+            color: var(--text-color);
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.75rem;
+
+        }
+
+       
+
+        .metric-value {
+
+            font-size: 1.1rem;
+
+            font-weight: 700;
+
+            color: var(--primary-purple);
+
+        }
+
+       
+
+        .scorecard-container {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+
+            gap: 2rem;
+
+            margin-bottom: 3rem;
+
+        }
+
+       
+
+        .scorecard {
+
+            background-color: var(--card-background);
+
+            backdrop-filter: blur(20px);
+
+            border-radius: 1.5rem;
+
+            padding: 2rem;
+
+            border: 1px solid var(--border-color);
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            transition: all 0.2s ease-in-out;
+
+        }
+
+
+
+        .scorecard:hover {
+
+            transform: translateY(-5px);
+
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+
+        }
+
+       
+
+        .scorecard-title {
+
+            font-size: 1.25rem;
+
+            font-weight: 600;
+
+            color: var(--heading-color);
+
+        }
+
+       
+
+        .scorecard-value {
+
+            font-size: 3rem;
+
+            font-weight: 800;
+
+            color: var(--primary-purple);
+
+            margin: 1rem 0;
+
+        }
+
+       
+
+        .scorecard-trend {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.5rem;
+
+            font-size: 1rem;
+
+            font-weight: 600;
+
+        }
+
+
+
+        .trend-positive {
+
+            color: #28a745;
+
+        }
+
+       
+
+        .trend-negative {
+
+            color: #dc3545;
+
+        }
+
+
+
+        .chart-container {
+
+            width: 100%;
+
+            height: 400px;
+
+            margin-top: 2rem;
+
+            position: relative;
+
+        }
+
+       
+
+        .error-message-box {
+
+            text-align: center;
+
+            color: #d32f2f;
+
+            background-color: #ffebee;
+
+            padding: 2rem;
+
+            border-radius: 1rem;
+
+            margin-top: 2rem;
+
+            border: 1px solid #d32f2f;
+
+            max-width: 600px;
+
+            margin-left: auto;
+
+            margin-right: auto;
+
+        }
+
+       
+
+        .spinner {
+
+            border: 6px solid rgba(108, 30, 116, 0.2);
+
+            border-left-color: var(--primary-purple);
+
+            border-radius: 50%;
+
+            width: 50px;
+
+            height: 50px;
+
+            animation: spin 1s linear infinite;
+
+        }
+
+        @keyframes spin {
+
+            to { transform: rotate(360deg); }
+
+        }
+
+        .loader-container {
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            height: 50vh;
+
+        }
+
+       
+
+        .last-updated-text {
+
+            text-align: center;
+
+            margin-top: 3rem;
+
+            font-size: 0.9rem;
+
+            color: #6b7280;
+
+        }
+
+
+
+        .hidden {
+
+            display: none !important;
+
+        }
+
+       
+
+        /* Responsive styles for mobile */
+
+        @media (max-width: 768px) {
+
+            body {
+
+                overflow-x: hidden;
+
+                overflow-y: auto;
+
+            }
+
+            .dashboard-container {
+
+                flex-direction: column;
+
+            }
+
+            .sidebar {
+
+                width: 100%;
+
+                height: auto;
+
+                flex-direction: row;
+
+                justify-content: space-around;
+
+                border-right: none;
+
+                border-bottom: 1px solid var(--border-color);
+
+                padding: 1rem 0.5rem;
+
+                position: static;
+
+                height: auto;
+
+            }
+
+            .sidebar-logo {
+
+                display: none;
+
+            }
+
+            .sidebar-nav-item {
+
+                padding: 0.75rem 1rem;
+
+                font-size: 1.2rem;
+
+            }
+
+            .main-content {
+
+                padding: 1.5rem;
+
+                margin-left: 0;
+
+                height: auto;
+
+            }
+
+            .top-level-box-title {
+
+                text-align: center;
+
+                font-size: 1.75rem;
+
+            }
+
+            .sub-box-title {
+
+                text-align: center;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <div class="dashboard-container">
+
+        <!-- Sidebar -->
+
+        <aside class="sidebar">
+
+            <div class="sidebar-logo">Dashboard</div>
+
+            <nav>
+
+                <a href="#" class="sidebar-nav-item active" data-target="overview">
+
+                    <i class="fas fa-chart-line nav-icon"></i>
+
+                    <span>Overview</span>
+
+                </a>
+
+                <a href="#" class="sidebar-nav-item" data-target="daily">
+
+                    <i class="fas fa-calendar-day nav-icon"></i>
+
+                    <span>Daily Metrics</span>
+
+                </a>
+
+                <a href="#" class="sidebar-nav-item" data-target="settings">
+
+                    <i class="fas fa-cog nav-icon"></i>
+
+                    <span>Settings</span>
+
+                </a>
+
+            </nav>
+
+        </aside>
+
+
+
+        <!-- Main Content Area -->
+
+        <main class="main-content">
+
+            <!-- Section containers -->
+
+            <div id="overview-section" class="section-container">
+
+                <!-- Overview metrics will be rendered here -->
+
+            </div>
+
+           
+
+            <div id="daily-section" class="section-container hidden">
+
+                <!-- Daily metrics will be rendered here -->
+
+            </div>
+
+
+
+            <div id="settings-section" class="section-container hidden">
+
+                <div class="top-level-box">
+
+                    <h2 class="top-level-box-title">Settings</h2>
+
+                    <p class="text-gray-600">This section is a placeholder for user settings.</p>
+
+                </div>
+
+            </div>
+
+
+
+            <div id="last-updated-footer" class="last-updated-text"></div>
+
+        </main>
+
+    </div>
+
+
+
+    <script>
+
+        const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
+
+        const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+
+       
+
+        // This will store the Chart.js instance so we can destroy and re-create it
+
+        let dailyChartInstance = null;
+
+        let overviewChartInstance = null;
+
+
+
+        function showLoadingIndicator(containerId) {
+
+            const container = document.getElementById(containerId);
+
+            container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
+
+        }
+
+
+
+        function showFailureMessage(containerId, message) {
+
+            const container = document.getElementById(containerId);
+
+            container.innerHTML = `
+
+                <div class="error-message-box">
+
+                    <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
+
+                    <p class="text-lg">${message}</p>
+
+                    <p class="mt-4">Please check the console for more details.</p>
+
+                </div>
+
+            `;
+
+        }
+
+       
+
+        // This is a more robust CSV parser
+
+        function parseCSV(csv) {
+
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+
+            if (lines.length < 2) {
+
+                console.error("CSV data has fewer than 2 lines (header + data).");
+
+                return [];
+
+            }
+
+            const headers = lines[0].split(',').map(header => header.trim());
+
+            const data = [];
+
+
+
+            for (let i = 1; i < lines.length; i++) {
+
+                const line = lines[i];
+
+                // Regex to handle commas inside quoted strings
+
+                const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
+
+                if (values) {
+
+                    const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
+
+                    if (trimmedValues.length === headers.length) {
+
+                        const obj = {};
+
+                        for (let j = 0; j < headers.length; j++) {
+
+                            obj[headers[j]] = trimmedValues[j];
+
+                        }
+
+                        data.push(obj);
+
+                    }
+
+                }
+
+            }
+
+            return data;
+
+        }
+
+
+
+        async function fetchCSVData(url) {
+
+            console.log(`Attempting to fetch data from: ${url}`);
+
+            try {
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+
+                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+
+                    throw new Error(`HTTP error! status: ${response.status}`);
+
+                }
+
+                const text = await response.text();
+
+                console.log(`Successfully fetched data from ${url}`);
+
+                if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
+
+                    console.error("The Google Sheets URL is invalid or the file does not exist.");
+
+                    return null;
+
+                }
+
+                return text;
+
+            } catch (error) {
+
+                console.error("Could not fetch CSV data:", error);
+
+                return null;
+
+            }
+
+        }
+
+       
+
+        function renderOverviewDashboard(data) {
+
+            const container = document.getElementById('overview-section');
+
+            container.innerHTML = ''; // Clear previous content
+
+           
+
+            if (!data || data.length === 0) {
+
+                showFailureMessage('overview-section', 'Failed to load Overview Metrics data.');
+
+                return;
+
+            }
+
+           
+
+            const groupedData = data.reduce((acc, row) => {
+
+                const topLevelBox = row['Top-Level Box'];
+
+                const subBoxHeader = row['Sub-Box Header'];
+
+                if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
+
+                if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
+
+                acc[topLevelBox][subBoxHeader].push(row);
+
+                return acc;
+
+            }, {});
+
+
+
+            // Iterate through each top-level box and render it
+
+            for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
+
+                const topLevelBoxEl = document.createElement('div');
+
+                topLevelBoxEl.className = "top-level-box";
+
+                topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
+
+               
+
+                const subBoxesContainer = document.createElement('div');
+
+                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+
+
+
+                // Iterate through each sub-box and its metrics
+
+                for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
+
+                    const subBoxEl = document.createElement('div');
+
+                    subBoxEl.className = "sub-box";
+
+                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
+
+                    const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+
+                   
+
+                    metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
+
+                        const metricEl = document.createElement('div');
+
+                        metricEl.className = "metric-item";
+
+                        // Using a simple icon for the metric items
+
+                        metricEl.innerHTML = `
+
+                            <span class="metric-label">
+
+                                <i class="fas fa-database text-purple-500"></i>
+
+                                ${metric['Data Header']}
+
+                            </span>
+
+                            <span class="metric-value">${metric['Value']}</span>
+
+                        `;
+
+                        metricsContainer.appendChild(metricEl);
+
+                    });
+
+                    subBoxesContainer.appendChild(subBoxEl);
+
+                }
+
+                topLevelBoxEl.appendChild(subBoxesContainer);
+
+                container.appendChild(topLevelBoxEl);
+
+            }
+
+        }
+
+       
+
+        function renderDailyMetricsDashboard(data) {
+
+            const container = document.getElementById('daily-section');
+
+            container.innerHTML = '';
+
+           
+
+            if (!data || data.length === 0) {
+
+                showFailureMessage('daily-section', 'Failed to load Daily Metrics data.');
+
+                return;
+
+            }
+
+
+
+            // Create a top-level box for the entire section
+
+            const topLevelBoxEl = document.createElement('div');
+
+            topLevelBoxEl.className = "top-level-box";
+
+            topLevelBoxEl.innerHTML = `
+
+                <h2 class="top-level-box-title">Daily Metrics</h2>
+
+            `;
+
+            container.appendChild(topLevelBoxEl);
+
+           
+
+            // Generate a line chart for the daily data
+
+            const dailyUserChartData = data.filter(d => d['Cumulative'] === 'Total Users');
+
+            if (dailyUserChartData.length > 0) {
+
+                const dates = dailyUserChartData.map(d => d['Date']);
+
+                const webData = dailyUserChartData.map(d => d['WEB']);
+
+                const androidData = dailyUserChartData.map(d => d['ANDROID']);
+
+                const iosData = dailyUserChartData.map(d => d['iOS']);
+
+               
+
+                const chartBox = document.createElement('div');
+
+                chartBox.className = "sub-box mb-8";
+
+                chartBox.innerHTML = `
+
+                    <h3 class="sub-box-title">Daily User Trend</h3>
+
+                    <div class="chart-container">
+
+                        <canvas id="dailyUserChart"></canvas>
+
+                    </div>
+
+                `;
+
+                topLevelBoxEl.appendChild(chartBox);
+
+               
+
+                // Destroy previous chart instance if it exists
+
+                if (dailyChartInstance) {
+
+                    dailyChartInstance.destroy();
+
+                }
+
+               
+
+                // Create a new chart
+
+                const ctx = document.getElementById('dailyUserChart').getContext('2d');
+
+                dailyChartInstance = new Chart(ctx, {
+
+                    type: 'line',
+
+                    data: {
+
+                        labels: dates,
+
+                        datasets: [
+
+                            {
+
+                                label: 'Web Users',
+
+                                data: webData,
+
+                                borderColor: 'rgba(108, 30, 116, 1)',
+
+                                backgroundColor: 'rgba(108, 30, 116, 0.2)',
+
+                                tension: 0.4,
+
+                                fill: true,
+
+                            },
+
+                            {
+
+                                label: 'Android Users',
+
+                                data: androidData,
+
+                                borderColor: 'rgba(25, 126, 203, 1)',
+
+                                backgroundColor: 'rgba(25, 126, 203, 0.2)',
+
+                                tension: 0.4,
+
+                                fill: true,
+
+                            },
+
+                            {
+
+                                label: 'iOS Users',
+
+                                data: iosData,
+
+                                borderColor: 'rgba(235, 100, 100, 1)',
+
+                                backgroundColor: 'rgba(235, 100, 100, 0.2)',
+
+                                tension: 0.4,
+
+                                fill: true,
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                display: true,
+
+                            },
+
+                            title: {
+
+                                display: false,
+
+                            }
+
+                        },
+
+                        scales: {
+
+                            x: {
+
+                                grid: {
+
+                                    display: false
+
+                                },
+
+                            },
+
+                            y: {
+
+                                beginAtZero: true,
+
+                                grid: {
+
+                                    color: 'rgba(108, 30, 116, 0.1)'
+
+                                },
+
+                            }
+
+                        }
+
+                    }
+
+                });
+
+            }
+
+           
+
+            // Now render the individual daily metrics in sub-boxes
+
+            const dailyMetricsContainer = document.createElement('div');
+
+            dailyMetricsContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+
+
+
+            // Group by metric name
+
+            const groupedMetrics = data.reduce((acc, row) => {
+
+                const metricName = row['Cumulative'];
+
+                if (metricName && metricName !== 'Total Users' && metricName.trim() !== '') {
+
+                    if (!acc[metricName]) { acc[metricName] = []; }
+
+                    acc[metricName].push(row);
+
+                }
+
+                return acc;
+
+            }, {});
+
+
+
+            for (const [metricName, entries] of Object.entries(groupedMetrics)) {
+
+                const subBoxEl = document.createElement('div');
+
+                subBoxEl.className = "sub-box";
+
+                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3><div class="space-y-3"></div>`;
+
+                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+
+               
+
+                // Sort to show the latest date first
+
+                entries.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+
+
+
+                // Take the most recent entry for each platform for a snapshot view
+
+                const latestEntry = entries[0];
+
+                ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
+
+                    if (latestEntry[platform] && latestEntry[platform] !== 'NA' && latestEntry[platform].trim() !== '') {
+
+                        const metricEl = document.createElement('div');
+
+                        metricEl.className = "metric-item";
+
+                        metricEl.innerHTML = `
+
+                            <span class="metric-label">
+
+                                <i class="fas fa-chart-bar text-purple-500"></i>
+
+                                ${platform}
+
+                            </span>
+
+                            <span class="metric-value">${latestEntry[platform]}</span>
+
+                        `;
+
+                        metricsContainer.appendChild(metricEl);
+
+                    }
+
+                });
+
+                dailyMetricsContainer.appendChild(subBoxEl);
+
+            }
+
+
+
+            topLevelBoxEl.appendChild(dailyMetricsContainer);
+
+        }
+
+       
+
+        function handleNavigation(overviewData, dailyMetricsData) {
+
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+
+            const sections = document.querySelectorAll('.section-container');
+
+            navItems.forEach(item => {
+
+                item.addEventListener('click', (e) => {
+
+                    e.preventDefault();
+
+                    const targetId = item.dataset.target + '-section';
+
+                    navItems.forEach(nav => nav.classList.remove('active'));
+
+                    item.classList.add('active');
+
+                    sections.forEach(section => section.classList.add('hidden'));
+
+                    document.getElementById(targetId).classList.remove('hidden');
+
+
+
+                    if (item.dataset.target === 'overview') {
+
+                        renderOverviewDashboard(overviewData);
+
+                    } else if (item.dataset.target === 'daily') {
+
+                        renderDailyMetricsDashboard(dailyMetricsData);
+
+                    }
+
+                });
+
+            });
+
+        }
+
+       
+
+        function updateLastUpdatedTime() {
+
+            const now = new Date();
+
+            const formattedTime = now.toLocaleDateString('en-US', {
+
+                year: 'numeric',
+
+                month: 'long',
+
+                day: 'numeric',
+
+                hour: '2-digit',
+
+                minute: '2-digit',
+
+                second: '2-digit'
+
+            });
+
+            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
+
+        }
+
+
+
+        async function initializeDashboard() {
+
+            showLoadingIndicator('overview-section');
+
+            showLoadingIndicator('daily-section');
+
+           
+
+            updateLastUpdatedTime();
+
+
+
+            const [overviewCsv, dailyMetricsCsv] = await Promise.all([
+
+                fetchCSVData(OVERVIEW_URL),
+
+                fetchCSVData(DAILY_METRICS_URL)
+
+            ]);
+
+
+
+            const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
+
+            const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
+
+
+
+            renderOverviewDashboard(overviewData);
+
+            handleNavigation(overviewData, dailyMetricsData);
+
+        }
+
+
+
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+
+    </script>
+
+</body>
+
+</html>
 
