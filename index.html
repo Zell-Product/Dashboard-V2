@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overall Metrics Dashboard</title>
+    <title>Product Dashboard</title>
     <!-- Correct favicon link for a .png file -->
     <link rel="icon" href="favicon.png" type="image/png">
     <!-- Tailwind CSS CDN -->
@@ -140,24 +140,6 @@
             color: var(--primary-purple);
         }
         
-        .spinner {
-            border: 6px solid rgba(108, 30, 116, 0.2);
-            border-left-color: var(--primary-purple);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loader-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 50vh;
-        }
-        
         .error-message-box {
             text-align: center;
             color: #d32f2f;
@@ -236,229 +218,129 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Use the embedded data directly to prove the rendering logic works
+        const OVERVIEW_DATA_JSON = '[{"Top-Level Box":"User Analytics","Sub-Box Header":"Daily Active Users (DAU)","Order":"1","Data Header":"Web","Value":"2,746"},{"Top-Level Box":"User Analytics","Sub-Box Header":"Daily Active Users (DAU)","Order":"2","Data Header":"Android","Value":"503"},{"Top-Level Box":"User Analytics","Sub-Box Header":"Daily Active Users (DAU)","Order":"3","Data Header":"iOS","Value":"55"},{"Top-Level Box":"User Analytics","Sub-Box Header":"Monthly Active Users (MAU)","Order":"1","Data Header":"Web","Value":"8,909"},{"Top-Level Box":"User Analytics","Sub-Box Header":"Monthly Active Users (MAU)","Order":"2","Data Header":"Android","Value":"2,951"},{"Top-Level Box":"User Analytics","Sub-Box Header":"Monthly Active Users (MAU)","Order":"3","Data Header":"iOS","Value":"259"},{"Top-Level Box":"Batches Information","Sub-Box Header":"General","Order":"1","Data Header":"Total Enrolled Students","Value":"3498"},{"Top-Level Box":"Batches Information","Sub-Box Header":"General","Order":"2","Data Header":"Live Batches Count","Value":"26"},{"Top-Level Box":"Batches Information","Sub-Box Header":"Performance Data","Order":"1","Data Header":"Average Attendance %","Value":"35%"},{"Top-Level Box":"Batches Information","Sub-Box Header":"Performance Data","Order":"2","Data Header":"Average LPS","Value":"12.52"},{"Top-Level Box":"Batches Information","Sub-Box Header":"Performance Data","Order":"3","Data Header":"QC Batches Check %","Value":"0%"},{"Top-Level Box":"Student Support","Sub-Box Header":"Ask a Doubt","Order":"1","Data Header":"Total Doubts","Value":"502"},{"Top-Level Box":"Student Support","Sub-Box Header":"Ask a Doubt","Order":"2","Data Header":"Unanswered Doubts","Value":"7"},{"Top-Level Box":"Student Support","Sub-Box Header":"LMS Tickets","Order":"1","Data Header":"Total Tickets","Value":"612"},{"Top-Level Box":"Student Support","Sub-Box Header":"LMS Tickets","Order":"2","Data Header":"Open Tickets","Value":"1"}]';
+        const DAILY_DATA_JSON = '[{"Cumulative":"Rating","WEB":"NA","ANDROID":"4.05","iOS":""},{"Cumulative":"Number of Ratings","WEB":"NA","ANDROID":"40","iOS":""},{"Cumulative":"Downloads","WEB":"NA","ANDROID":"3729","iOS":""},{"Cumulative":"Downloads(India)","WEB":"NA","ANDROID":"3560","iOS":""},{"Cumulative":"DAU","WEB":"1669","ANDROID":"503","iOS":""},{"Cumulative":"MAU","WEB":"5667","ANDROID":"2951","iOS":""},{"Cumulative":"Active Users","WEB":"17192","ANDROID":"","iOS":""},{"Cumulative":"Tests Taken","WEB":"28903","ANDROID":"","iOS":""},{"Cumulative":"Total Visitors","WEB":"184833","ANDROID":"","iOS":""},{"Cumulative":"Avg. Time Spent","WEB":"00:40:47","ANDROID":"","iOS":""}]';
+        
+        const overviewData = JSON.parse(OVERVIEW_DATA_JSON);
+        const dailyMetricsData = JSON.parse(DAILY_DATA_JSON);
 
-            const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
-            const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+        /**
+         * Renders the "Overview Metrics" dashboard UI.
+         * @param {Array<Object>} data The array of data objects.
+         */
+        function renderOverviewDashboard(data) {
+            const container = document.getElementById('overview-section');
+            container.innerHTML = '';
+            const groupedData = data.reduce((acc, row) => {
+                const topLevelBox = row['Top-Level Box'];
+                const subBoxHeader = row['Sub-Box Header'];
+                if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
+                if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
+                acc[topLevelBox][subBoxHeader].push(row);
+                return acc;
+            }, {});
 
-            // Show a loading indicator while data is being fetched
-            function showLoadingIndicator(containerId) {
-                const container = document.getElementById(containerId);
-                container.innerHTML = `
-                    <div class="loader-container">
-                        <div class="spinner"></div>
-                    </div>
-                `;
-            }
-            
-            // Show a large, clear error message on the page
-            function showFailureMessage(containerId, message) {
-                const container = document.getElementById(containerId);
-                container.innerHTML = `
-                    <div class="error-message-box">
-                        <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
-                        <p class="text-lg">${message}</p>
-                        <p class="mt-4">Please check the console for more details.</p>
-                    </div>
-                `;
-            }
-
-            /**
-             * Fetches CSV data from a URL.
-             * @param {string} url The URL of the CSV file.
-             * @returns {Promise<string>} A promise that resolves with the CSV text, or null on failure.
-             */
-            async function fetchCSVData(url) {
-                console.log(`Attempting to fetch data from: ${url}`);
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        console.error(\`HTTP Error: \${response.status} - \${response.statusText}\`);
-                        throw new Error(\`HTTP error! status: \${response.status}\`);
-                    }
-                    const text = await response.text();
-                    console.log(`Successfully fetched data from ${url}`);
-                    // Check for common Google Sheets error messages
-                    if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
-                        console.error("The Google Sheets URL is invalid or the file does not exist.");
-                        return null;
-                    }
-                    return text;
-                } catch (error) {
-                    console.error("Could not fetch CSV data:", error);
-                    return null;
-                }
-            }
-
-            /**
-             * Parses a CSV string into an array of objects, handling quoted values.
-             * @param {string} csv The CSV data as a string.
-             * @returns {Array<Object>} An array of objects representing the CSV rows.
-             */
-            function parseCSV(csv) {
-                const lines = csv.split('\n').filter(line => line.trim() !== '');
-                if (lines.length < 2) {
-                    console.error("CSV data has fewer than 2 lines (header + data).");
-                    return [];
-                }
-                const headers = lines[0].split(',').map(header => header.trim());
-                const data = [];
-
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i];
-                    const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
-                    const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
-
-                    if (trimmedValues.length === headers.length) {
-                        const obj = {};
-                        for (let j = 0; j < headers.length; j++) {
-                            obj[headers[j]] = trimmedValues[j];
-                        }
-                        data.push(obj);
-                    }
-                }
-                console.log("Parsed CSV Data:", data);
-                return data;
-            }
-
-            /**
-             * Renders the "Overview Metrics" dashboard UI.
-             * @param {Array<Object>} data The array of data objects from the CSV.
-             */
-            function renderOverviewDashboard(data) {
-                const container = document.getElementById('overview-section');
-                container.innerHTML = '';
-                if (!data || data.length === 0) {
-                    showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
-                    return;
-                }
-                const groupedData = data.reduce((acc, row) => {
-                    const topLevelBox = row['Top-Level Box'];
-                    const subBoxHeader = row['Sub-Box Header'];
-                    if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
-                    if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
-                    acc[topLevelBox][subBoxHeader].push(row);
-                    return acc;
-                }, {});
-
-                for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
-                    const topLevelBoxEl = document.createElement('div');
-                    topLevelBoxEl.className = "top-level-box";
-                    topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
-                    const subBoxesContainer = document.createElement('div');
-                    subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
-                    for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
-                        const subBoxEl = document.createElement('div');
-                        subBoxEl.className = "sub-box";
-                        subBoxEl.innerHTML = `
-                            <h3 class="sub-box-title">${subBoxHeader}</h3>
-                            <div class="space-y-3"></div>
-                        `;
-                        const metricsContainer = subBoxEl.querySelector('div.space-y-3');
-                        metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
-                            const metricEl = document.createElement('div');
-                            metricEl.className = "metric-item";
-                            metricEl.innerHTML = `
-                                <span class="metric-label">${metric['Data Header']}</span>
-                                <span class="metric-value">${metric['Value']}</span>
-                            `;
-                            metricsContainer.appendChild(metricEl);
-                        });
-                        subBoxesContainer.appendChild(subBoxEl);
-                    }
-                    topLevelBoxEl.appendChild(subBoxesContainer);
-                    container.appendChild(topLevelBoxEl);
-                }
-            }
-
-            /**
-             * Renders the "Daily Metrics" dashboard UI.
-             * @param {Array<Object>} data The array of data objects from the CSV.
-             */
-            function renderDailyMetricsDashboard(data) {
-                const container = document.getElementById('daily-section');
-                container.innerHTML = '';
-                if (!data || data.length === 0) {
-                     showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
-                    return;
-                }
-
+            for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
                 const topLevelBoxEl = document.createElement('div');
                 topLevelBoxEl.className = "top-level-box";
-                topLevelBoxEl.innerHTML = `
-                    <h2 class="top-level-box-title">Daily Metrics</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-                `;
-                const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
-
-                data.forEach(metric => {
-                    if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
-                        return;
-                    }
+                topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
+                const subBoxesContainer = document.createElement('div');
+                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+                for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                     const subBoxEl = document.createElement('div');
                     subBoxEl.className = "sub-box";
                     subBoxEl.innerHTML = `
-                        <h3 class="sub-box-title">${metric['Cumulative']}</h3>
+                        <h3 class="sub-box-title">${subBoxHeader}</h3>
                         <div class="space-y-3"></div>
                     `;
                     const metricsContainer = subBoxEl.querySelector('div.space-y-3');
-                    ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
-                        if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
-                            const metricEl = document.createElement('div');
-                            metricEl.className = "metric-item";
-                            metricEl.innerHTML = `
-                                <span class="metric-label">${platform}</span>
-                                <span class="metric-value">${metric[platform]}</span>
-                            `;
-                            metricsContainer.appendChild(metricEl);
-                        }
+                    metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
+                        const metricEl = document.createElement('div');
+                        metricEl.className = "metric-item";
+                        metricEl.innerHTML = `
+                            <span class="metric-label">${metric['Data Header']}</span>
+                            <span class="metric-value">${metric['Value']}</span>
+                        `;
+                        metricsContainer.appendChild(metricEl);
                     });
                     subBoxesContainer.appendChild(subBoxEl);
-                });
+                }
+                topLevelBoxEl.appendChild(subBoxesContainer);
                 container.appendChild(topLevelBoxEl);
             }
-            
-            // Function to handle navigation between sections
-            function handleNavigation(overviewData, dailyMetricsData) {
-                const navItems = document.querySelectorAll('.sidebar-nav-item');
-                const sections = document.querySelectorAll('.section-container');
-                navItems.forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const targetId = item.dataset.target + '-section';
-                        navItems.forEach(nav => nav.classList.remove('active'));
-                        item.classList.add('active');
-                        sections.forEach(section => section.classList.add('hidden'));
-                        document.getElementById(targetId).classList.remove('hidden');
+        }
 
-                        if (item.dataset.target === 'overview') {
-                            renderOverviewDashboard(overviewData);
-                        } else if (item.dataset.target === 'daily') {
-                            renderDailyMetricsDashboard(dailyMetricsData);
-                        }
-                    });
+        /**
+         * Renders the "Daily Metrics" dashboard UI.
+         * @param {Array<Object>} data The array of data objects.
+         */
+        function renderDailyMetricsDashboard(data) {
+            const container = document.getElementById('daily-section');
+            container.innerHTML = '';
+            const topLevelBoxEl = document.createElement('div');
+            topLevelBoxEl.className = "top-level-box";
+            topLevelBoxEl.innerHTML = `
+                <h2 class="top-level-box-title">Daily Metrics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            `;
+            const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
+
+            data.forEach(metric => {
+                if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
+                    return;
+                }
+                const subBoxEl = document.createElement('div');
+                subBoxEl.className = "sub-box";
+                subBoxEl.innerHTML = `
+                    <h3 class="sub-box-title">${metric['Cumulative']}</h3>
+                    <div class="space-y-3"></div>
+                `;
+                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
+                    if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
+                        const metricEl = document.createElement('div');
+                        metricEl.className = "metric-item";
+                        metricEl.innerHTML = `
+                            <span class="metric-label">${platform}</span>
+                            <span class="metric-value">${metric[platform]}</span>
+                        `;
+                        metricsContainer.appendChild(metricEl);
+                    }
                 });
-            }
+                subBoxesContainer.appendChild(subBoxEl);
+            });
+            container.appendChild(topLevelBoxEl);
+        }
+        
+        // Function to handle navigation between sections
+        function handleNavigation(overviewData, dailyMetricsData) {
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            const sections = document.querySelectorAll('.section-container');
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = item.dataset.target + '-section';
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    sections.forEach(section => section.classList.add('hidden'));
+                    document.getElementById(targetId).classList.remove('hidden');
 
-            // Main execution function
-            async function initializeDashboard() {
-                showLoadingIndicator('overview-section');
-                showLoadingIndicator('daily-section');
+                    if (item.dataset.target === 'overview') {
+                        renderOverviewDashboard(overviewData);
+                    } else if (item.dataset.target === 'daily') {
+                        renderDailyMetricsDashboard(dailyMetricsData);
+                    }
+                });
+            });
+        }
 
-                const overviewCsv = await fetchCSVData(OVERVIEW_URL);
-                const dailyMetricsCsv = await fetchCSVData(DAILY_METRICS_URL);
-
-                const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
-                const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
-
-                // Render the initial dashboard. If data is empty, it will show an error message.
-                renderOverviewDashboard(overviewData);
-                
-                // Set up navigation. The data is passed so it's not re-fetched every time.
-                handleNavigation(overviewData, dailyMetricsData);
-            }
-
-            initializeDashboard();
+        document.addEventListener('DOMContentLoaded', () => {
+            // Render the initial dashboard with the embedded data
+            renderOverviewDashboard(overviewData);
+            
+            // Set up navigation for the embedded data
+            handleNavigation(overviewData, dailyMetricsData);
         });
     </script>
 </body>
