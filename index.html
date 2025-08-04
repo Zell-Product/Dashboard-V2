@@ -64,7 +64,7 @@
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             color: var(--text-color);
-            font-size: 1.2rem; /* Increased font size */
+            font-size: 1.4rem; /* Increased font size as requested */
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -222,7 +222,7 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- The H1 title has been removed to fix the duplicate "Dashboard" heading -->
+            <!-- No main title is present to prevent duplication -->
 
             <!-- Section containers -->
             <div id="overview-section" class="section-container">
@@ -391,7 +391,6 @@
         function handleNavigation(overviewData, dailyMetricsData) {
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             const sections = document.querySelectorAll('.section-container');
-            const mainTitle = document.getElementById('main-title'); // If you add a title later
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
