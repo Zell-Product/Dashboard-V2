@@ -59,10 +59,10 @@
             text-align: center;
         }
 
-        .sidebar-nav-item, .sidebar-nav-sub-item {
+        .sidebar-nav-item {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start; /* Aligned to the start, as there is no nested menu */
             padding: 1rem 1.25rem;
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
@@ -73,44 +73,21 @@
             cursor: pointer;
             text-decoration: none;
         }
-
-        .sidebar-nav-sub-item {
-            padding-left: 3rem;
-        }
         
-        .sidebar-nav-item-content {
-            display: flex;
-            align-items: center;
-        }
-
-        .sidebar-nav-item-content svg {
+        .sidebar-nav-item svg {
             margin-right: 1rem;
         }
 
-        .sidebar-nav-item:hover, .sidebar-nav-sub-item:hover {
+        .sidebar-nav-item:hover {
             background-color: rgba(108, 30, 116, 0.1);
             color: var(--primary-purple);
         }
 
-        .sidebar-nav-item.active, .sidebar-nav-sub-item.active {
+        .sidebar-nav-item.active {
             background-color: var(--primary-purple);
             color: #ffffff;
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .sidebar-nav-nested {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-
-        .sidebar-nav-nested.expanded {
-            max-height: 500px;
-        }
-
-        .rotate-90 {
-            transform: rotate(90deg);
         }
 
         .main-content {
@@ -253,28 +230,16 @@
             <div class="sidebar-logo">Dashboard</div>
             <nav>
                 <a href="#" class="sidebar-nav-item active" data-section="overview">
-                    <div class="sidebar-nav-item-content">
-                        <i data-lucide="users" class="w-6 h-6 mr-4"></i>
-                        Overview
-                    </div>
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                    Overview
                 </a>
-                <div class="sidebar-nav-item" data-action="toggle-nested">
-                    <div class="sidebar-nav-item-content">
-                        <i data-lucide="bar-chart-2" class="w-6 h-6 mr-4"></i>
-                        General Reports
-                    </div>
-                    <i data-lucide="chevron-right" class="w-6 h-6 transition-transform duration-300"></i>
-                </div>
-                <div class="sidebar-nav-nested">
-                    <a href="#" class="sidebar-nav-sub-item" data-section="daily">
-                        Daily Metrics
-                    </a>
-                </div>
+                <a href="#" class="sidebar-nav-item" data-section="daily">
+                    <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
+                    Daily Metrics
+                </a>
                 <a href="#" class="sidebar-nav-item" data-section="settings">
-                    <div class="sidebar-nav-item-content">
-                        <i data-lucide="settings" class="w-6 h-6 mr-4"></i>
-                        Settings
-                    </div>
+                    <i data-lucide="settings" class="w-6 h-6"></i>
+                    Settings
                 </a>
             </nav>
         </aside>
@@ -482,7 +447,7 @@
             // A central function to show a specific content section
             function showSection(sectionName) {
                 // Remove 'active' class from all sidebar items
-                document.querySelectorAll('.sidebar-nav-item, .sidebar-nav-sub-item').forEach(item => {
+                document.querySelectorAll('.sidebar-nav-item').forEach(item => {
                     item.classList.remove('active');
                 });
                 
@@ -510,16 +475,6 @@
                     e.preventDefault();
                     showSection(item.dataset.section);
                 });
-            });
-
-            // Set up event listener for the nested menu toggle
-            const toggleButton = document.querySelector('[data-action="toggle-nested"]');
-            const nestedMenu = document.querySelector('.sidebar-nav-nested');
-            const chevronIcon = toggleButton.querySelector('i');
-            
-            toggleButton.addEventListener('click', () => {
-                nestedMenu.classList.toggle('expanded');
-                chevronIcon.classList.toggle('rotate-90');
             });
             
             // Show the overview section on initial load
