@@ -7,7 +7,7 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
     
-    <!-- CDN Imports -->
+    <!-- CDN Imports for React, Tailwind, and other libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,9 +57,9 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 12px rgba(0,0,0,0.1);
-            position: fixed;
+            position: fixed; /* Keep sidebar fixed */
             height: 100vh;
-            overflow-y: auto;
+            overflow-y: auto; /* Allow sidebar content to scroll */
         }
 
         .sidebar-logo {
@@ -78,6 +78,7 @@
         .sidebar-nav-item {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 1rem 1.25rem;
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
@@ -87,8 +88,13 @@
             transition: all 0.2s ease-in-out;
             cursor: pointer;
         }
+        
+        .sidebar-nav-item-content {
+            display: flex;
+            align-items: center;
+        }
 
-        .sidebar-nav-item svg {
+        .sidebar-nav-item-content svg {
             margin-right: 1rem;
         }
 
@@ -103,7 +109,21 @@
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        
+        .sidebar-nav-nested {
+            padding-left: 2.5rem;
+            margin-top: -0.5rem; /* Adjust margin to bring it closer to the parent */
+            transition: all 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
 
+        .sidebar-nav-nested.expanded {
+            max-height: 100px; /* A value large enough to show content */
+            opacity: 1;
+        }
+        
         .main-content {
             flex-grow: 1;
             padding: 3rem;
@@ -263,10 +283,10 @@
 <body>
 <div id="root"></div>
 
-<script type="text/babel">
+<script>
     const { useState, useEffect, useRef } = React;
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
-    const { Users, CalendarClock, CloudDownload, BarChart2, FileSpreadsheet } = lucide;
+    const { Users, CalendarClock, CloudDownload, BarChart2, FileSpreadsheet, ChevronRight } = lucide;
 
     const App = () => {
         // Hard-coded sample data to ensure the UI renders.
@@ -350,8 +370,6 @@
         
         // This function handles the conditional rendering based on the app's state
         const renderContent = () => {
-            // Note: Loading and error states are currently hard-coded to false/null
-            // to ensure the UI renders. Live data fetching will re-introduce this logic.
             if (loading) {
                 return React.createElement('div', { className: 'loader-container' },
                     React.createElement('div', { className: 'w-16 h-16 border-4 border-purple-200 border-l-purple-600 rounded-full animate-spin' })
@@ -479,17 +497,46 @@
         
         const Sidebar = ({ onNavClick }) => {
             const [activeSection, setActiveSection] = useState('overview-section');
+            const [isGeneralReportsOpen, setIsGeneralReportsOpen] = useState(false);
+
             const handleSectionClick = (sectionId) => {
               setActiveSection(sectionId);
               onNavClick(sectionId);
+            };
+            
+            const handleGeneralReportsClick = () => {
+                setIsGeneralReportsOpen(!isGeneralReportsOpen);
             };
 
             return React.createElement('aside', { className: 'sidebar' },
                 React.createElement('div', { className: 'sidebar-logo' }, 'Dashboard'),
                 React.createElement('nav', null,
-                    React.createElement('a', { onClick: () => handleSectionClick('overview-section'), className: `sidebar-nav-item ${activeSection === 'overview-section' ? 'active' : ''}` }, React.createElement(Users, { className: 'w-6 h-6' }), ' Overview'),
-                    React.createElement('a', { onClick: () => handleSectionClick('daily-section'), className: `sidebar-nav-item ${activeSection === 'daily-section' ? 'active' : ''}` }, React.createElement(BarChart2, { className: 'w-6 h-6' }), ' Daily Metrics'),
-                    React.createElement('a', { onClick: () => handleSectionClick('settings-section'), className: `sidebar-nav-item ${activeSection === 'settings-section' ? 'active' : ''}` }, React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }), ' Settings')
+                    React.createElement('a', { onClick: () => handleSectionClick('overview-section'), className: `sidebar-nav-item ${activeSection === 'overview-section' ? 'active' : ''}` }, 
+                        React.createElement('div', { className: 'sidebar-nav-item-content' },
+                            React.createElement(Users, { className: 'w-6 h-6' }),
+                            ' Overview'
+                        )
+                    ),
+                    React.createElement('a', { onClick: handleGeneralReportsClick, className: `sidebar-nav-item` }, 
+                        React.createElement('div', { className: 'sidebar-nav-item-content' },
+                            React.createElement(BarChart2, { className: 'w-6 h-6' }),
+                            ' General Reports'
+                        ),
+                        React.createElement(ChevronRight, { className: `w-6 h-6 transition-transform duration-300 ${isGeneralReportsOpen ? 'rotate-90' : ''}`})
+                    ),
+                    React.createElement('div', { className: `sidebar-nav-nested ${isGeneralReportsOpen ? 'expanded' : ''}` },
+                        React.createElement('a', { onClick: () => handleSectionClick('daily-section'), className: `sidebar-nav-item ${activeSection === 'daily-section' ? 'active' : ''}` }, 
+                            React.createElement('div', { className: 'sidebar-nav-item-content' },
+                                'Daily Metrics'
+                            )
+                        )
+                    ),
+                    React.createElement('a', { onClick: () => handleSectionClick('settings-section'), className: `sidebar-nav-item ${activeSection === 'settings-section' ? 'active' : ''}` }, 
+                        React.createElement('div', { className: 'sidebar-nav-item-content' },
+                            React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }),
+                            ' Settings'
+                        )
+                    )
                 )
             );
         };
