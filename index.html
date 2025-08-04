@@ -73,11 +73,11 @@
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
-            text-decoration: none; /* Ensure links don't have an underline */
+            text-decoration: none;
         }
 
         .sidebar-nav-sub-item {
-            padding-left: 3rem; /* Indent sub-items */
+            padding-left: 3rem;
         }
         
         .sidebar-nav-item-content {
@@ -108,7 +108,11 @@
         }
 
         .sidebar-nav-nested.expanded {
-            max-height: 500px; /* A value large enough to show content */
+            max-height: 500px;
+        }
+
+        .rotate-90 {
+            transform: rotate(90deg);
         }
 
         .main-content {
@@ -292,6 +296,7 @@
     </div>
 
     <script>
+        // URLs for the public Google Sheets data
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
         const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
 
@@ -315,26 +320,32 @@
 
         // Function to fetch data from a Google Sheets URL
         async function fetchCSVData(url) {
+            console.log(`Attempting to fetch data from: ${url}`);
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorMsg = `HTTP Error: ${response.status} - ${response.statusText}`;
+                    console.error(errorMsg);
+                    throw new Error(errorMsg);
                 }
                 const text = await response.text();
                 if (text.includes("Sorry, the file you have requested does not exist.")) {
                     console.error("The Google Sheets URL is invalid or the file does not exist.");
-                    return null;
+                    throw new Error("Invalid Google Sheets URL or file not found.");
                 }
+                console.log(`Successfully fetched data from: ${url}`);
                 return text;
             } catch (error) {
                 console.error("Could not fetch CSV data:", error);
+                showFailureMessage('overview-section', 'Could not retrieve data from the server.');
+                showFailureMessage('daily-section', 'Could not retrieve data from the server.');
                 return null;
             }
         }
         
         // Function to parse CSV text into an array of objects
         function parseCSV(csv) {
+            console.log("Parsing CSV data...");
             const lines = csv.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) {
                 console.error("CSV data has fewer than 2 lines (header + data).");
@@ -344,7 +355,6 @@
             const data = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
-                // Regex to handle commas inside quoted strings
                 const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
                 const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
                 if (trimmedValues.length === headers.length) {
@@ -355,6 +365,7 @@
                     data.push(obj);
                 }
             }
+            console.log(`Successfully parsed ${data.length} rows of data.`);
             return data;
         }
 
@@ -363,12 +374,13 @@
             const container = document.getElementById('overview-section');
             container.innerHTML = '';
             if (!data || data.length === 0) {
-                showFailureMessage('overview-section', 'Failed to load Overview Metrics data.');
+                showFailureMessage('overview-section', 'Failed to load Overview Metrics data or data is empty.');
                 return;
             }
             const groupedData = data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
+                if (!topLevelBox || !subBoxHeader) return acc;
                 if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
                 if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
                 acc[topLevelBox][subBoxHeader].push(row);
@@ -387,10 +399,12 @@
                     subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
                     const metricsContainer = subBoxEl.querySelector('div.space-y-3');
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
-                        const metricEl = document.createElement('div');
-                        metricEl.className = "metric-item";
-                        metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
-                        metricsContainer.appendChild(metricEl);
+                        if (metric['Data Header'] && metric['Value']) {
+                            const metricEl = document.createElement('div');
+                            metricEl.className = "metric-item";
+                            metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
+                            metricsContainer.appendChild(metricEl);
+                        }
                     });
                     subBoxesContainer.appendChild(subBoxEl);
                 }
@@ -404,7 +418,7 @@
             const container = document.getElementById('daily-section');
             container.innerHTML = '';
             if (!data || data.length === 0) {
-                showFailureMessage('daily-section', 'Failed to load Daily Metrics data.');
+                showFailureMessage('daily-section', 'Failed to load Daily Metrics data or data is empty.');
                 return;
             }
 
@@ -417,22 +431,21 @@
             const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
 
             data.forEach(metric => {
-                if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
-                    return;
+                if (metric['Cumulative'] && metric['Cumulative'].trim() !== '') {
+                    const subBoxEl = document.createElement('div');
+                    subBoxEl.className = "sub-box";
+                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
+                    const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                    ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
+                        if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
+                            const metricEl = document.createElement('div');
+                            metricEl.className = "metric-item";
+                            metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
+                            metricsContainer.appendChild(metricEl);
+                        }
+                    });
+                    subBoxesContainer.appendChild(subBoxEl);
                 }
-                const subBoxEl = document.createElement('div');
-                subBoxEl.className = "sub-box";
-                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
-                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
-                ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
-                    if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
-                        const metricEl = document.createElement('div');
-                        metricEl.className = "metric-item";
-                        metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
-                        metricsContainer.appendChild(metricEl);
-                    }
-                });
-                subBoxesContainer.appendChild(subBoxEl);
             });
             container.appendChild(topLevelBoxEl);
         }
@@ -456,7 +469,7 @@
                 document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
             }
             updateLastUpdatedTime();
-
+            
             // Fetch both data sources in parallel
             const [overviewCsv, dailyMetricsCsv] = await Promise.all([
                 fetchCSVData(OVERVIEW_URL),
@@ -466,53 +479,51 @@
             const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
             const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
 
-            // A function to handle showing a specific content section
-            function showSection(sectionId) {
-                // Hide all sections
-                document.querySelectorAll('.section-container').forEach(section => {
-                    section.classList.add('hidden');
-                });
-                // Show the target section
-                document.getElementById(sectionId).classList.remove('hidden');
-
-                // Render content based on the section
-                if (sectionId === 'overview-section') {
-                    renderOverviewDashboard(overviewData);
-                } else if (sectionId === 'daily-section') {
-                    renderDailyMetricsDashboard(dailyMetricsData);
-                }
-                
-                // Update active state in sidebar
+            // A central function to show a specific content section
+            function showSection(sectionName) {
+                // Remove 'active' class from all sidebar items
                 document.querySelectorAll('.sidebar-nav-item, .sidebar-nav-sub-item').forEach(item => {
                     item.classList.remove('active');
                 });
-                const activeItem = document.querySelector(`[data-section="${sectionId.replace('-section', '')}"]`);
-                if (activeItem) {
-                    activeItem.classList.add('active');
+                
+                // Hide all main content sections
+                document.querySelectorAll('.section-container').forEach(section => {
+                    section.classList.add('hidden');
+                });
+
+                // Show the selected section and set the active class
+                const sectionId = `${sectionName}-section`;
+                document.getElementById(sectionId).classList.remove('hidden');
+                document.querySelector(`[data-section="${sectionName}"]`)?.classList.add('active');
+
+                // Render content if it hasn't been rendered yet or needs to be refreshed
+                if (sectionName === 'overview') {
+                    renderOverviewDashboard(overviewData);
+                } else if (sectionName === 'daily') {
+                    renderDailyMetricsDashboard(dailyMetricsData);
                 }
             }
 
             // Set up event listeners for navigation items
-            const navItems = document.querySelectorAll('[data-section]');
-            navItems.forEach(item => {
+            document.querySelectorAll('[data-section]').forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const sectionName = item.dataset.section;
-                    showSection(`${sectionName}-section`);
+                    showSection(item.dataset.section);
                 });
             });
 
-            // Set up event listener for the "General Reports" toggle
+            // Set up event listener for the nested menu toggle
             const toggleButton = document.querySelector('[data-action="toggle-nested"]');
             const nestedMenu = document.querySelector('.sidebar-nav-nested');
             const chevronIcon = toggleButton.querySelector('i');
+            
             toggleButton.addEventListener('click', () => {
                 nestedMenu.classList.toggle('expanded');
                 chevronIcon.classList.toggle('rotate-90');
             });
             
             // Show the overview section on initial load
-            showSection('overview-section');
+            showSection('overview');
         }
 
         document.addEventListener('DOMContentLoaded', initializeDashboard);
