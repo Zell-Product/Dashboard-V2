@@ -287,6 +287,7 @@
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
     const { Users, CalendarClock, CloudDownload, BarChart2, FileSpreadsheet } = lucide;
 
+    // Use the online published Google Sheets URLs as requested
     const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
     const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
 
@@ -310,6 +311,7 @@
 
         /**
          * Fetches CSV data from a given URL with retries and robust error handling.
+         * This function is crucial for ensuring data is loaded from the online source.
          * @param {string} url The URL of the CSV file.
          * @param {number} retries The number of times to retry on failure.
          * @param {number} delay The initial delay in milliseconds for exponential backoff.
@@ -371,7 +373,7 @@
             return data;
         };
 
-        // Main effect to fetch data on component mount
+        // Main effect to fetch data on component mount, as per your request
         useEffect(() => {
             const initializeDashboard = async () => {
                 setLoading(true);
@@ -399,7 +401,6 @@
             if (ref && ref.current) ref.current.scrollIntoView({ behavior: 'smooth' });
         };
         
-        // This function will be passed to the Sidebar component
         const handleNavClick = (sectionId) => {
             const ref = sectionRefs[sectionId];
             scrollToRef(ref);
@@ -569,12 +570,18 @@
         };
         
         const Sidebar = ({ onNavClick }) => {
+            const [activeSection, setActiveSection] = useState('overview-section');
+            const handleSectionClick = (sectionId) => {
+              setActiveSection(sectionId);
+              onNavClick(sectionId);
+            };
+
             return React.createElement('aside', { className: 'sidebar' },
                 React.createElement('div', { className: 'sidebar-logo' }, 'Dashboard'),
                 React.createElement('nav', null,
-                    React.createElement('a', { onClick: () => onNavClick('overview-section'), className: 'sidebar-nav-item' }, React.createElement(Users, { className: 'w-6 h-6' }), ' Overview'),
-                    React.createElement('a', { onClick: () => onNavClick('daily-section'), className: 'sidebar-nav-item' }, React.createElement(BarChart2, { className: 'w-6 h-6' }), ' Daily Metrics'),
-                    React.createElement('a', { onClick: () => onNavClick('settings-section'), className: 'sidebar-nav-item' }, React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }), ' Settings')
+                    React.createElement('a', { onClick: () => handleSectionClick('overview-section'), className: `sidebar-nav-item ${activeSection === 'overview-section' ? 'active' : ''}` }, React.createElement(Users, { className: 'w-6 h-6' }), ' Overview'),
+                    React.createElement('a', { onClick: () => handleSectionClick('daily-section'), className: `sidebar-nav-item ${activeSection === 'daily-section' ? 'active' : ''}` }, React.createElement(BarChart2, { className: 'w-6 h-6' }), ' Daily Metrics'),
+                    React.createElement('a', { onClick: () => handleSectionClick('settings-section'), className: `sidebar-nav-item ${activeSection === 'settings-section' ? 'active' : ''}` }, React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }), ' Settings')
                 )
             );
         };
