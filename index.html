@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overall Metrics Dashboard</title>
-    <!-- Corrected favicon link to use .png format -->
+    <!-- Correct favicon link for a .png file -->
     <link rel="icon" href="favicon.png" type="image/png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +15,7 @@
         :root {
             --primary-purple: #6c1e74;
             --light-background: #f0f4f9;
-            --card-background: rgba(255, 255, 255, 0.75); /* More opaque for better readability */
+            --card-background: rgba(255, 255, 255, 0.75);
             --border-color: rgba(108, 30, 116, 0.2);
             --text-color: #374151;
             --heading-color: #1f2937;
@@ -35,10 +35,11 @@
         .dashboard-container {
             display: flex;
             min-height: 100vh;
+            justify-content: center;
         }
 
         .sidebar {
-            width: 280px; /* Slightly wider sidebar */
+            width: 280px;
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
@@ -50,7 +51,7 @@
         }
 
         .sidebar-logo {
-            font-size: 1.75rem; /* Larger logo font */
+            font-size: 1.75rem;
             font-weight: 800;
             color: var(--heading-color);
             margin-bottom: 3rem;
@@ -59,11 +60,11 @@
 
         .sidebar-nav-item {
             display: block;
-            padding: 1rem 1.25rem; /* Larger padding */
-            margin-bottom: 0.75rem; /* More spacing between items */
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             color: var(--text-color);
-            font-size: 1.1rem; /* Slightly larger font */
+            font-size: 1.1rem;
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -83,21 +84,21 @@
 
         .main-content {
             flex-grow: 1;
-            padding: 3rem; /* Larger padding for main content */
+            padding: 3rem;
             overflow-y: auto;
         }
         
         .top-level-box {
-            margin-bottom: 3rem; /* More space between main sections */
+            margin-bottom: 3rem;
             padding: 3rem;
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
-            border-radius: 1.5rem; /* More rounded corners */
+            border-radius: 1.5rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: 1px solid var(--border-color);
         }
         .top-level-box-title {
-            font-size: 2rem; /* Larger title font */
+            font-size: 2rem;
             font-weight: 700;
             color: var(--primary-purple);
             margin-bottom: 2rem;
@@ -114,7 +115,7 @@
             border: 1px solid rgba(108, 30, 116, 0.1);
         }
         .sub-box-title {
-            font-size: 1.5rem; /* Larger sub-title font */
+            font-size: 1.5rem;
             font-weight: 600;
             color: var(--heading-color);
             margin-bottom: 1.5rem;
@@ -123,7 +124,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0; /* More vertical padding */
+            padding: 0.75rem 0;
             border-bottom: 1px solid rgba(108, 30, 116, 0.15);
         }
         .metric-item:last-child {
@@ -157,16 +158,19 @@
             height: 50vh;
         }
         
-        .error-message {
+        .error-message-box {
             text-align: center;
             color: #d32f2f;
             background-color: #ffebee;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
+            padding: 2rem;
+            border-radius: 1rem;
             margin-top: 2rem;
             border: 1px solid #d32f2f;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
-    
+
         /* Responsive styles for mobile */
         @media (max-width: 768px) {
             .dashboard-container {
@@ -246,6 +250,18 @@
                     </div>
                 `;
             }
+            
+            // Show a large, clear error message on the page
+            function showFailureMessage(containerId, message) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="error-message-box">
+                        <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
+                        <p class="text-lg">${message}</p>
+                        <p class="mt-4">Please check the console for more details.</p>
+                    </div>
+                `;
+            }
 
             /**
              * Fetches CSV data from a URL.
@@ -253,12 +269,15 @@
              * @returns {Promise<string>} A promise that resolves with the CSV text, or null on failure.
              */
             async function fetchCSVData(url) {
+                console.log(`Attempting to fetch data from: ${url}`);
                 try {
                     const response = await fetch(url);
                     if (!response.ok) {
+                        console.error(\`HTTP Error: \${response.status} - \${response.statusText}\`);
                         throw new Error(\`HTTP error! status: \${response.status}\`);
                     }
                     const text = await response.text();
+                    console.log(`Successfully fetched data from ${url}`);
                     // Check for common Google Sheets error messages
                     if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
                         console.error("The Google Sheets URL is invalid or the file does not exist.");
@@ -278,8 +297,10 @@
              */
             function parseCSV(csv) {
                 const lines = csv.split('\n').filter(line => line.trim() !== '');
-                if (lines.length < 2) return [];
-
+                if (lines.length < 2) {
+                    console.error("CSV data has fewer than 2 lines (header + data).");
+                    return [];
+                }
                 const headers = lines[0].split(',').map(header => header.trim());
                 const data = [];
 
@@ -296,6 +317,7 @@
                         data.push(obj);
                     }
                 }
+                console.log("Parsed CSV Data:", data);
                 return data;
             }
 
@@ -307,7 +329,7 @@
                 const container = document.getElementById('overview-section');
                 container.innerHTML = '';
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<div class="error-message">Failed to load Overview Metrics data. Please check the URL and your network connection.</div>';
+                    showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
                     return;
                 }
                 const groupedData = data.reduce((acc, row) => {
@@ -324,14 +346,14 @@
                     topLevelBoxEl.className = "top-level-box";
                     topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
                     const subBoxesContainer = document.createElement('div');
-                    subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"; // Increased gap
+                    subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
                     for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                         const subBoxEl = document.createElement('div');
                         subBoxEl.className = "sub-box";
                         subBoxEl.innerHTML = `
                             <h3 class="sub-box-title">${subBoxHeader}</h3>
                             <div class="space-y-3"></div>
-                        `; // Increased space
+                        `;
                         const metricsContainer = subBoxEl.querySelector('div.space-y-3');
                         metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
                             const metricEl = document.createElement('div');
@@ -357,7 +379,7 @@
                 const container = document.getElementById('daily-section');
                 container.innerHTML = '';
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<div class="error-message">Failed to load Daily Metrics data. Please check the URL and your network connection.</div>';
+                     showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
                     return;
                 }
 
@@ -400,7 +422,6 @@
             function handleNavigation(overviewData, dailyMetricsData) {
                 const navItems = document.querySelectorAll('.sidebar-nav-item');
                 const sections = document.querySelectorAll('.section-container');
-
                 navItems.forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -430,7 +451,10 @@
                 const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
                 const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
 
+                // Render the initial dashboard. If data is empty, it will show an error message.
                 renderOverviewDashboard(overviewData);
+                
+                // Set up navigation. The data is passed so it's not re-fetched every time.
                 handleNavigation(overviewData, dailyMetricsData);
             }
 
