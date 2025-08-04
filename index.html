@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overall Metrics Dashboard</title>
+    <!-- Add this link tag to include your favicon.ico file -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        /* Define the new theme colors based on Zell's hex code for a light theme */
+        :root {
+            --primary-purple: #6c1e74;
+            --light-background: #f0f4f9; /* Light, subtle background */
+            --card-background: rgba(255, 255, 255, 0.6); /* Semi-transparent white for glass effect */
+            --border-color: rgba(108, 30, 116, 0.3);
+            --text-color: #374151; /* Dark text for legibility */
+            --heading-color: #1f2937;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-background);
+            background-image: linear-gradient(135deg, #f0f4f9 0%, #e8edf3 100%);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-background);
+            backdrop-filter: blur(20px); /* Enhanced Glass effect */
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--heading-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .sidebar-nav-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .sidebar-nav-item:hover {
+            background-color: rgba(108, 30, 116, 0.1);
+            color: var(--primary-purple);
+        }
+
+        .sidebar-nav-item.active {
+            background-color: var(--primary-purple);
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .top-level-box {
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background-color: var(--card-background);
+            backdrop-filter: blur(20px);
+            border-radius: 1.25rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+        .top-level-box-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-purple);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .sub-box {
+            padding: 1.5rem;
+            background-color: rgba(108, 30, 116, 0.05); /* Very light purple tint */
+            backdrop-filter: blur(20px);
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(108, 30, 116, 0.1);
+        }
+        .sub-box-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--heading-color);
+            margin-bottom: 1rem;
+        }
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(108, 30, 116, 0.15);
+        }
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary-purple);
+        }
+        
+        .spinner {
+            border: 4px solid rgba(108, 30, 116, 0.2);
+            border-left-color: var(--primary-purple);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50vh;
+        }
+        
+        .error-message {
+            text-align: center;
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+            border: 1px solid #d32f2f;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .sidebar-logo {
+                display: none;
+            }
+            .main-content {
+                padding: 1rem;
+            }
+            .top-level-box-title {
+                text-align: center;
+            }
+            .sub-box-title {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">Dashboard</div>
+            <nav>
+                <a href="#" class="sidebar-nav-item active" data-target="overview">Overview</a>
+                <a href="#" class="sidebar-nav-item" data-target="daily">Daily Metrics</a>
+                <a href="#" class="sidebar-nav-item" data-target="settings">Settings</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-8">Dashboard Home</h1>
+
+            <!-- Section containers -->
+            <div id="overview-section" class="section-container">
+                <!-- Overview metrics will be rendered here -->
+            </div>
+            
+            <div id="daily-section" class="section-container hidden">
+                <!-- Daily metrics will be rendered here -->
+            </div>
+
+            <div id="settings-section" class="section-container hidden">
+                <div class="top-level-box">
+                    <h2 class="top-level-box-title">Settings</h2>
+                    <p class="text-gray-600">This section is a placeholder for user settings.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
+            const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+
+            // Show a loading indicator while data is being fetched
+            function showLoadingIndicator(containerId) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="loader-container">
+                        <div class="spinner"></div>
+                    </div>
+                `;
+            }
+
+            /**
+             * Fetches CSV data from a URL.
+             * @param {string} url The URL of the CSV file.
+             * @returns {Promise<string>} A promise that resolves with the CSV text.
+             */
+            async function fetchCSVData(url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(\`HTTP error! status: \${response.status}\`);
+                    }
+                    return await response.text();
+                } catch (error) {
+                    console.error("Could not fetch CSV data:", error);
+                    return null;
+                }
+            }
+
+            /**
+             * Parses a CSV string into an array of objects, handling quoted values.
+             * @param {string} csv The CSV data as a string.
+             * @returns {Array<Object>} An array of objects representing the CSV rows.
+             */
+            function parseCSV(csv) {
+                const lines = csv.split('\n').filter(line => line.trim() !== '');
+                if (lines.length < 2) return []; // Return empty array if no data lines
+
+                const headers = lines[0].split(',').map(header => header.trim());
+                const data = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i];
+                    // Use a regex to correctly handle commas inside double quotes
+                    const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
+                    const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
+
+                    if (trimmedValues.length === headers.length) {
+                        const obj = {};
+                        for (let j = 0; j < headers.length; j++) {
+                            obj[headers[j]] = trimmedValues[j];
+                        }
+                        data.push(obj);
+                    }
+                }
+                return data;
+            }
+
+            /**
+             * Renders the "Overview Metrics" dashboard UI based on the parsed data.
+             * @param {Array<Object>} data The array of data objects from the CSV.
+             */
+            function renderOverviewDashboard(data) {
+                const container = document.getElementById('overview-section');
+                container.innerHTML = ''; // Clear existing content
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="error-message">Failed to load Overview Metrics data. Please check the URL and your network connection.</div>';
+                    return;
+                }
+
+                // Group data by 'Top-Level Box' and 'Sub-Box Header'
+                const groupedData = data.reduce((acc, row) => {
+                    const topLevelBox = row['Top-Level Box'];
+                    const subBoxHeader = row['Sub-Box Header'];
+
+                    if (!acc[topLevelBox]) {
+                        acc[topLevelBox] = {};
+                    }
+                    if (!acc[topLevelBox][subBoxHeader]) {
+                        acc[topLevelBox][subBoxHeader] = [];
+                    }
+                    acc[topLevelBox][subBoxHeader].push(row);
+                    return acc;
+                }, {});
+
+                // Iterate through the grouped data to build the UI
+                for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
+                    // Create a top-level box container
+                    const topLevelBoxEl = document.createElement('div');
+                    topLevelBoxEl.className = "top-level-box";
+                    topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
+                    
+                    // Create a container for sub-boxes, using a responsive grid
+                    const subBoxesContainer = document.createElement('div');
+                    subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+
+                    for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
+                        // Create a sub-box card
+                        const subBoxEl = document.createElement('div');
+                        subBoxEl.className = "sub-box";
+                        subBoxEl.innerHTML = `
+                            <h3 class="sub-box-title">${subBoxHeader}</h3>
+                            <div class="space-y-2"></div>
+                        `;
+
+                        // Add metrics to the sub-box, sorted by order
+                        const metricsContainer = subBoxEl.querySelector('div.space-y-2');
+                        metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
+                            const metricEl = document.createElement('div');
+                            metricEl.className = "metric-item";
+                            metricEl.innerHTML = `
+                                <span class="metric-label">${metric['Data Header']}</span>
+                                <span class="metric-value">${metric['Value']}</span>
+                            `;
+                            metricsContainer.appendChild(metricEl);
+                        });
+
+                        subBoxesContainer.appendChild(subBoxEl);
+                    }
+                    
+                    topLevelBoxEl.appendChild(subBoxesContainer);
+                    container.appendChild(topLevelBoxEl);
+                }
+            }
+
+            /**
+             * Renders the "Daily Metrics" dashboard UI.
+             * @param {Array<Object>} data The array of data objects from the CSV.
+             */
+            function renderDailyMetricsDashboard(data) {
+                const container = document.getElementById('daily-section');
+                container.innerHTML = ''; // Clear existing content
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="error-message">Failed to load Daily Metrics data. Please check the URL and your network connection.</div>';
+                    return;
+                }
+
+                // Create the top-level box for Daily Metrics
+                const topLevelBoxEl = document.createElement('div');
+                topLevelBoxEl.className = "top-level-box";
+                topLevelBoxEl.innerHTML = `
+                    <h2 class="top-level-box-title">Daily Metrics</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                `;
+
+                const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
+
+                // Iterate through each metric in the daily data
+                data.forEach(metric => {
+                    // Skip if the metric name is 'Cumulative' or a header row
+                    if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
+                        return;
+                    }
+                    
+                    const subBoxEl = document.createElement('div');
+                    subBoxEl.className = "sub-box";
+                    subBoxEl.innerHTML = `
+                        <h3 class="sub-box-title">${metric['Cumulative']}</h3>
+                        <div class="space-y-2"></div>
+                    `;
+                    const metricsContainer = subBoxEl.querySelector('div.space-y-2');
+                    
+                    // Add metrics for Web, Android, and iOS, only if the value exists
+                    ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
+                        if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
+                            const metricEl = document.createElement('div');
+                            metricEl.className = "metric-item";
+                            metricEl.innerHTML = `
+                                <span class="metric-label">${platform}</span>
+                                <span class="metric-value">${metric[platform]}</span>
+                            `;
+                            metricsContainer.appendChild(metricEl);
+                        }
+                    });
+
+                    subBoxesContainer.appendChild(subBoxEl);
+                });
+
+                container.appendChild(topLevelBoxEl);
+            }
+            
+            // Function to handle navigation between sections
+            function handleNavigation(overviewData, dailyMetricsData) {
+                const navItems = document.querySelectorAll('.sidebar-nav-item');
+                const sections = document.querySelectorAll('.section-container');
+
+                navItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = item.dataset.target + '-section';
+
+                        // Remove active class from all nav items
+                        navItems.forEach(nav => nav.classList.remove('active'));
+                        // Add active class to the clicked item
+                        item.classList.add('active');
+
+                        // Hide all sections and show the target section
+                        sections.forEach(section => section.classList.add('hidden'));
+                        document.getElementById(targetId).classList.remove('hidden');
+
+                        // Render the appropriate dashboard content
+                        if (item.dataset.target === 'overview') {
+                            renderOverviewDashboard(overviewData);
+                        } else if (item.dataset.target === 'daily') {
+                            renderDailyMetricsDashboard(dailyMetricsData);
+                        }
+                    });
+                });
+            }
+
+            // Main execution function
+            async function initializeDashboard() {
+                showLoadingIndicator('overview-section');
+                showLoadingIndicator('daily-section');
+
+                const overviewCsv = await fetchCSVData(OVERVIEW_URL);
+                const dailyMetricsCsv = await fetchCSVData(DAILY_METRICS_URL);
+
+                const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
+                const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
+
+                // Render the initial overview dashboard
+                renderOverviewDashboard(overviewData);
+
+                // Set up navigation
+                handleNavigation(overviewData, dailyMetricsData);
+            }
+
+            initializeDashboard();
+        });
+    </script>
+</body>
+</html>
