@@ -9,8 +9,9 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Import the Inter font for a modern look */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    
+        
         /* Define theme colors for a light, iOS-inspired Glass UI */
         :root {
             --primary-purple: #6c1e74;
@@ -19,6 +20,7 @@
             --border-color: rgba(108, 30, 116, 0.2);
             --text-color: #374151;
             --heading-color: #1f2937;
+            --sidebar-width: 280px;
         }
 
         body {
@@ -30,17 +32,17 @@
             box-sizing: border-box;
             color: var(--text-color);
             min-height: 100vh;
-            overflow-x: hidden;
+            /* Added margin-left to prevent content from going under the fixed sidebar */
+            margin-left: var(--sidebar-width);
         }
         
         .dashboard-container {
             display: flex;
             min-height: 100vh;
-            justify-content: center;
         }
 
         .sidebar {
-            width: 280px;
+            width: var(--sidebar-width);
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
@@ -49,6 +51,13 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+            
+            /* The key change: fixed positioning for static navigation */
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 10;
         }
 
         .sidebar-logo {
@@ -60,9 +69,7 @@
         }
 
         .sidebar-nav-item {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start; /* Aligned to the start, as there is no nested menu */
+            display: block;
             padding: 1rem 1.25rem;
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
@@ -71,11 +78,6 @@
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
-            text-decoration: none;
-        }
-        
-        .sidebar-nav-item svg {
-            margin-right: 1rem;
         }
 
         .sidebar-nav-item:hover {
@@ -94,12 +96,9 @@
             flex-grow: 1;
             padding: 3rem;
             overflow-y: auto;
+            width: 100%;
         }
         
-        .section-container {
-            min-height: 80vh;
-        }
-
         .top-level-box {
             margin-bottom: 3rem;
             padding: 3rem;
@@ -190,12 +189,15 @@
             color: #6b7280;
         }
 
-        .hidden {
-            display: none !important;
-        }
-
         /* Responsive styles for mobile */
         @media (max-width: 768px) {
+            body {
+                /* Remove left margin on mobile */
+                margin-left: 0;
+                /* Add padding to account for the fixed header */
+                padding-top: 8rem; /* Adjust based on the new header height */
+            }
+
             .dashboard-container {
                 flex-direction: column;
             }
@@ -207,6 +209,11 @@
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
                 padding: 1.5rem 1rem;
+                /* Adjust fixed positioning for the top bar on mobile */
+                position: fixed;
+                top: 0;
+                left: 0;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
             .sidebar-logo {
                 display: none;
@@ -224,93 +231,84 @@
     </style>
 </head>
 <body>
+
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-logo">Dashboard</div>
             <nav>
-                <a href="#" class="sidebar-nav-item active" data-section="overview">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                    Overview
-                </a>
-                <a href="#" class="sidebar-nav-item" data-section="daily">
-                    <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
-                    Daily Metrics
-                </a>
-                <a href="#" class="sidebar-nav-item" data-section="settings">
-                    <i data-lucide="settings" class="w-6 h-6"></i>
-                    Settings
-                </a>
+                <a href="#" class="sidebar-nav-item active" data-target="overview">Overview</a>
+                <a href="#" class="sidebar-nav-item" data-target="daily">Daily Metrics</a>
+                <a href="#" class="sidebar-nav-item" data-target="settings">Settings</a>
             </nav>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <div id="overview-section" class="section-container"></div>
-            <div id="daily-section" class="section-container hidden"></div>
+            <!-- No main title is present to prevent duplication -->
+
+            <!-- Section containers -->
+            <div id="overview-section" class="section-container">
+                <!-- Overview metrics will be rendered here -->
+            </div>
+            
+            <div id="daily-section" class="section-container hidden">
+                <!-- Daily metrics will be rendered here -->
+            </div>
+
             <div id="settings-section" class="section-container hidden">
                 <div class="top-level-box">
                     <h2 class="top-level-box-title">Settings</h2>
                     <p class="text-gray-600">This section is a placeholder for user settings.</p>
                 </div>
             </div>
+
             <div id="last-updated-footer" class="last-updated-text"></div>
         </main>
     </div>
 
-    <!-- Lucide for icons - Moved to the end of the body to ensure it's loaded before our script tries to use it. -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide-js@latest"></script>
-    
     <script>
-        // URLs for the public Google Sheets data
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
         const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
 
-        // Function to create a loading spinner
         function showLoadingIndicator(containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
         }
 
-        // Function to show a clean error message
         function showFailureMessage(containerId, message) {
             const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div class="error-message-box">
                     <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
                     <p class="text-lg">${message}</p>
-                    <p class="mt-4">Please check your network connection or the provided URL.</p>
+                    <p class="mt-4">Please check the console for more details.</p>
                 </div>
             `;
         }
 
-        // Function to fetch data from a Google Sheets URL
         async function fetchCSVData(url) {
             console.log(`Attempting to fetch data from: ${url}`);
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                    const errorMsg = `HTTP Error: ${response.status} - ${response.statusText}`;
-                    console.error(errorMsg);
-                    throw new Error(errorMsg);
+                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const text = await response.text();
-                if (text.includes("Sorry, the file you have requested does not exist.")) {
+                console.log(`Successfully fetched data from ${url}`);
+                if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
                     console.error("The Google Sheets URL is invalid or the file does not exist.");
-                    throw new Error("Invalid Google Sheets URL or file not found.");
+                    return null;
                 }
-                console.log(`Successfully fetched data from: ${url}`);
                 return text;
             } catch (error) {
                 console.error("Could not fetch CSV data:", error);
-                // The dashboard itself will handle rendering a failure message
                 return null;
             }
         }
         
-        // Function to parse CSV text into an array of objects
         function parseCSV(csv) {
-            console.log("Parsing CSV data...");
             const lines = csv.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) {
                 console.error("CSV data has fewer than 2 lines (header + data).");
@@ -318,10 +316,13 @@
             }
             const headers = lines[0].split(',').map(header => header.trim());
             const data = [];
+
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
+                // Regex to handle commas inside quoted strings
                 const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
                 const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
+
                 if (trimmedValues.length === headers.length) {
                     const obj = {};
                     for (let j = 0; j < headers.length; j++) {
@@ -330,22 +331,19 @@
                     data.push(obj);
                 }
             }
-            console.log(`Successfully parsed ${data.length} rows of data.`);
             return data;
         }
 
-        // Renders the overview dashboard section
         function renderOverviewDashboard(data) {
             const container = document.getElementById('overview-section');
             container.innerHTML = '';
             if (!data || data.length === 0) {
-                showFailureMessage('overview-section', 'Failed to load Overview Metrics data or data is empty.');
+                showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
                 return;
             }
             const groupedData = data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
-                if (!topLevelBox || !subBoxHeader) return acc;
                 if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
                 if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
                 acc[topLevelBox][subBoxHeader].push(row);
@@ -364,12 +362,10 @@
                     subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
                     const metricsContainer = subBoxEl.querySelector('div.space-y-3');
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
-                        if (metric['Data Header'] && metric['Value']) {
-                            const metricEl = document.createElement('div');
-                            metricEl.className = "metric-item";
-                            metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
-                            metricsContainer.appendChild(metricEl);
-                        }
+                        const metricEl = document.createElement('div');
+                        metricEl.className = "metric-item";
+                        metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
+                        metricsContainer.appendChild(metricEl);
                     });
                     subBoxesContainer.appendChild(subBoxEl);
                 }
@@ -378,12 +374,11 @@
             }
         }
 
-        // Renders the daily metrics dashboard section
         function renderDailyMetricsDashboard(data) {
             const container = document.getElementById('daily-section');
             container.innerHTML = '';
             if (!data || data.length === 0) {
-                showFailureMessage('daily-section', 'Failed to load Daily Metrics data or data is empty.');
+                 showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
                 return;
             }
 
@@ -396,45 +391,66 @@
             const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
 
             data.forEach(metric => {
-                if (metric['Cumulative'] && metric['Cumulative'].trim() !== '') {
-                    const subBoxEl = document.createElement('div');
-                    subBoxEl.className = "sub-box";
-                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
-                    const metricsContainer = subBoxEl.querySelector('div.space-y-3');
-                    ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
-                        if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
-                            const metricEl = document.createElement('div');
-                            metricEl.className = "metric-item";
-                            metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
-                            metricsContainer.appendChild(metricEl);
-                        }
-                    });
-                    subBoxesContainer.appendChild(subBoxEl);
+                if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
+                    return;
                 }
+                const subBoxEl = document.createElement('div');
+                subBoxEl.className = "sub-box";
+                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
+                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
+                    if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
+                        const metricEl = document.createElement('div');
+                        metricEl.className = "metric-item";
+                        metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
+                        metricsContainer.appendChild(metricEl);
+                    }
+                });
+                subBoxesContainer.appendChild(subBoxEl);
             });
             container.appendChild(topLevelBoxEl);
         }
+        
+        function handleNavigation(overviewData, dailyMetricsData) {
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            const sections = document.querySelectorAll('.section-container');
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = item.dataset.target + '-section';
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    sections.forEach(section => section.classList.add('hidden'));
+                    document.getElementById(targetId).classList.remove('hidden');
 
-        // Main function to handle all navigation and content rendering
+                    if (item.dataset.target === 'overview') {
+                        renderOverviewDashboard(overviewData);
+                    } else if (item.dataset.target === 'daily') {
+                        renderDailyMetricsDashboard(dailyMetricsData);
+                    }
+                });
+            });
+        }
+        
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const formattedTime = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
+        }
+
         async function initializeDashboard() {
-            // This is the fix: we now know lucide.js is loaded
-            lucide.createIcons();
-
-            // Set initial loading state
             showLoadingIndicator('overview-section');
             showLoadingIndicator('daily-section');
             
-            // Update the last updated time
-            function updateLastUpdatedTime() {
-                const now = new Date();
-                const formattedTime = now.toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-                document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
-            }
             updateLastUpdatedTime();
-            
+
             // Fetch both data sources in parallel
             const [overviewCsv, dailyMetricsCsv] = await Promise.all([
                 fetchCSVData(OVERVIEW_URL),
@@ -444,41 +460,8 @@
             const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
             const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
 
-            // A central function to show a specific content section
-            function showSection(sectionName) {
-                // Remove 'active' class from all sidebar items
-                document.querySelectorAll('.sidebar-nav-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                // Hide all main content sections
-                document.querySelectorAll('.section-container').forEach(section => {
-                    section.classList.add('hidden');
-                });
-
-                // Show the selected section and set the active class
-                const sectionId = `${sectionName}-section`;
-                document.getElementById(sectionId).classList.remove('hidden');
-                document.querySelector(`[data-section="${sectionName}"]`)?.classList.add('active');
-
-                // Render content if it hasn't been rendered yet or needs to be refreshed
-                if (sectionName === 'overview') {
-                    renderOverviewDashboard(overviewData);
-                } else if (sectionName === 'daily') {
-                    renderDailyMetricsDashboard(dailyMetricsData);
-                }
-            }
-
-            // Set up event listeners for navigation items
-            document.querySelectorAll('[data-section]').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showSection(item.dataset.section);
-                });
-            });
-            
-            // Show the overview section on initial load
-            showSection('overview');
+            renderOverviewDashboard(overviewData);
+            handleNavigation(overviewData, dailyMetricsData);
         }
 
         document.addEventListener('DOMContentLoaded', initializeDashboard);
