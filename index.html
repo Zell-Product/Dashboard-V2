@@ -1,447 +1,565 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overall Metrics Dashboard</title>
-    <!-- Correct favicon link for a .png file -->
-    <link rel="icon" href="favicon.png" type="image/png">
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
+import {
+  Users, CalendarClock, Clock, CloudDownload, PieChart, BarChart2, MessageSquare, Ticket, FileSpreadsheet
+} from 'lucide-react';
+import { createRoot } from 'react-dom/client';
+
+// Define the URLs for the CSV data files
+const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
+const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+
+// Root component for the entire application
+const App = () => {
+  const [overviewData, setOverviewData] = useState([]);
+  const [dailyMetricsData, setDailyMetricsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Refs for smooth scrolling to sections
+  const overviewRef = useRef(null);
+  const dailyMetricsRef = useRef(null);
+  const settingsRef = useRef(null);
+
+  /**
+   * Fetches data from a given CSV URL with robust error handling.
+   * @param {string} url The URL of the CSV data.
+   * @returns {Promise<string|null>} The CSV text or null on failure.
+   */
+  const fetchCSVData = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const text = await response.text();
+      if (text.includes("Sorry, the file you have requested does not exist.")) {
+        throw new Error("The Google Sheets URL is invalid or the file does not exist.");
+      }
+      return text;
+    } catch (error) {
+      console.error("Could not fetch CSV data:", error);
+      return null;
+    }
+  };
+
+  /**
+   * Parses a CSV string into an array of objects.
+   * @param {string} csv The CSV data as a string.
+   * @returns {Array<Object>} An array of objects representing the CSV data.
+   */
+  const parseCSV = (csv) => {
+    const lines = csv.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(header => header.trim());
+    const data = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
+      const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
+
+      if (trimmedValues.length === headers.length) {
+        const obj = {};
+        for (let j = 0; j < headers.length; j++) {
+          obj[headers[j]] = trimmedValues[j];
+        }
+        data.push(obj);
+      }
+    }
+    return data;
+  };
+
+  // Effect hook to fetch data when the component mounts
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [overviewCsv, dailyMetricsCsv] = await Promise.all([
+          fetchCSVData(OVERVIEW_URL),
+          fetchCSVData(DAILY_METRICS_URL)
+        ]);
+
+        if (overviewCsv) setOverviewData(parseCSV(overviewCsv));
+        if (dailyMetricsCsv) setDailyMetricsData(parseCSV(dailyMetricsCsv));
+
+      } catch (e) {
+        setError("Failed to load data. Please check the network connection and data sources.");
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initializeDashboard();
+  }, []);
+
+  // Handler for smooth scrolling
+  const scrollToRef = (ref) => {
+    if (ref && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Logic to process data for the overview section
+  const processOverviewData = (data) => {
+    return data.reduce((acc, row) => {
+      const topLevelBox = row['Top-Level Box'];
+      const subBoxHeader = row['Sub-Box Header'];
+      if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
+      if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
+      acc[topLevelBox][subBoxHeader].push(row);
+      return acc;
+    }, {});
+  };
+
+  const processedOverviewData = processOverviewData(overviewData);
+
+  // Logic to process data for the daily metrics section
+  const getDailyMetricsScorecards = (data) => {
+    const dau = data.find(d => d['Cumulative'] === 'DAU')?.WEB || 'NA';
+    const mau = data.find(d => d['Cumulative'] === 'MAU')?.WEB || 'NA';
+    const visitors = data.find(d => d['Cumulative'] === 'Total Visitors')?.WEB || 'NA';
+    return { dau, mau, visitors };
+  };
+
+  const getDailyMetricsSubBoxes = (data) => {
+    return data.filter(metric =>
+      !['Cumulative', 'DAU', 'MAU', 'Active Users', 'Total Visitors'].includes(metric['Cumulative'])
+      && metric['Cumulative'] && metric['Cumulative'].trim() !== ''
+    );
+  };
+
+  const scorecards = getDailyMetricsScorecards(dailyMetricsData);
+  const dailyMetricsSubBoxes = getDailyMetricsSubBoxes(dailyMetricsData);
+  
+  // Mock data for the Recharts graph
+  const mockDauChartData = [
+    { name: 'Mon', users: 1600 },
+    { name: 'Tue', users: 1650 },
+    { name: 'Wed', users: 1750 },
+    { name: 'Thu', users: 1800 },
+    { name: 'Fri', users: 1780 },
+    { name: 'Sat', users: 1700 },
+    { name: 'Sun', users: 1690 },
+  ];
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex flex-grow items-center justify-center min-h-screen">
+          <div className="loader-container">
+            <div className="w-16 h-16 border-4 border-purple-200 border-l-purple-600 rounded-full animate-spin"></div>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex flex-grow items-center justify-center min-h-screen p-8">
+          <div className="text-center p-8 bg-red-50 border border-red-300 rounded-2xl shadow-lg">
+            <h3 className="text-2xl font-bold text-red-600 mb-4">Error</h3>
+            <p className="text-lg text-red-500">{error}</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Render the main dashboard content after successful data load
+    return (
+      <>
+        {/* Overview Section */}
+        <section id="overview-section" ref={overviewRef} className="pt-24 pb-8">
+            <div className="top-level-box">
+                <h2 className="top-level-box-title">Overview Metrics</h2>
+                {Object.entries(processedOverviewData).map(([topLevelBox, subBoxes]) => (
+                    <div key={topLevelBox} className="mb-8">
+                        <h3 className="text-2xl font-semibold text-gray-800 mb-4">{topLevelBox}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Object.entries(subBoxes).map(([subBoxHeader, metrics]) => (
+                                <div key={subBoxHeader} className="sub-box">
+                                    <h4 className="sub-box-title">{subBoxHeader}</h4>
+                                    <div className="space-y-2">
+                                        {metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).map((metric, index) => (
+                                            <div key={index} className="metric-item">
+                                                <span className="metric-label">{metric['Data Header']}</span>
+                                                <span className="metric-value">{metric['Value']}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </section>
+
+        {/* Daily Metrics Section */}
+        <section id="daily-section" ref={dailyMetricsRef} className="py-8">
+            <div className="top-level-box">
+                <h2 className="top-level-box-title">Daily Metrics</h2>
+                <div className="scorecard-grid mb-8">
+                    <div className="scorecard">
+                        <div className="scorecard-icon"><Users className="w-7 h-7" /></div>
+                        <div className="scorecard-content">
+                            <h3>Daily Active Users</h3>
+                            <p>{scorecards.dau}</p>
+                        </div>
+                    </div>
+                    <div className="scorecard">
+                        <div className="scorecard-icon"><CalendarClock className="w-7 h-7" /></div>
+                        <div className="scorecard-content">
+                            <h3>Monthly Active Users</h3>
+                            <p>{scorecards.mau}</p>
+                        </div>
+                    </div>
+                    <div className="scorecard">
+                        <div className="scorecard-icon"><CloudDownload className="w-7 h-7" /></div>
+                        <div className="scorecard-content">
+                            <h3>Total Visitors</h3>
+                            <p>{scorecards.visitors}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="chart-container mb-8">
+                    <h3 className="top-level-box-title !mb-4 !pb-2">Daily Active Users Trend</h3>
+                    <ResponsiveContainer width="100%" height={320}>
+                        <LineChart data={mockDauChartData}>
+                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.5} />
+                            <XAxis dataKey="name" stroke="#6c1e74" />
+                            <YAxis stroke="#6c1e74" />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(108, 30, 116, 0.2)',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                                    backdropFilter: 'blur(10px)',
+                                    color: '#374151'
+                                }}
+                                itemStyle={{ color: '#6c1e74' }}
+                            />
+                            <Line type="monotone" dataKey="users" stroke="#6c1e74" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {dailyMetricsSubBoxes.map((metric, index) => (
+                        <div key={index} className="sub-box">
+                            <h4 className="sub-box-title">{metric['Cumulative']}</h4>
+                            <div className="space-y-2">
+                                {['WEB', 'ANDROID', 'iOS'].map(platform => (
+                                    metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '' ? (
+                                        <div key={platform} className="metric-item">
+                                            <span className="metric-label">{platform}</span>
+                                            <span className="metric-value">{metric[platform]}</span>
+                                        </div>
+                                    ) : null
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        {/* Settings Section */}
+        <section id="settings-section" ref={settingsRef} className="py-8">
+            <div className="top-level-box">
+                <h2 className="top-level-box-title">Settings</h2>
+                <p className="text-gray-600">This section is a placeholder for user settings.</p>
+            </div>
+        </section>
+
+        <footer className="last-updated-text py-8">
+            Last updated: {new Date().toLocaleString()}
+        </footer>
+      </>
+    );
+  };
+  
+  return (
+    <>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
-        /* Define theme colors for a light, iOS-inspired Glass UI */
-        :root {
-            --primary-purple: #6c1e74;
-            --light-background: #f0f4f9;
-            --card-background: rgba(255, 255, 255, 0.75);
-            --border-color: rgba(108, 30, 116, 0.2);
-            --text-color: #374151;
-            --heading-color: #1f2937;
-        }
+          :root {
+              --primary-purple: #6c1e74;
+              --light-background: #f0f4f9;
+              --card-background: rgba(255, 255, 255, 0.75);
+              --border-color: rgba(108, 30, 116, 0.2);
+              --text-color: #374151;
+              --heading-color: #1f2937;
+          }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--light-background);
-            background-image: linear-gradient(135deg, #f0f4f9 0%, #e8edf3 100%);
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            color: var(--text-color);
-            min-height: 100vh;
-        }
-        
-        .dashboard-container {
-            display: flex;
-            min-height: 100vh;
-            justify-content: center;
-        }
+          body {
+              font-family: 'Inter', sans-serif;
+              background-color: var(--light-background);
+              background-image: linear-gradient(135deg, #f0f4f9 0%, #e8edf3 100%);
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+              color: var(--text-color);
+              min-height: 100vh;
+              overflow-x: hidden;
+          }
+          
+          .dashboard-container {
+              display: flex;
+              min-height: 100vh;
+          }
 
-        .sidebar {
-            width: 280px;
-            background-color: var(--card-background);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border-color);
-            padding: 2rem;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 12px rgba(0,0,0,0.1);
-        }
+          .sidebar {
+              width: 280px;
+              background-color: var(--card-background);
+              backdrop-filter: blur(20px);
+              border-right: 1px solid var(--border-color);
+              padding: 2rem;
+              flex-shrink: 0;
+              display: flex;
+              flex-direction: column;
+              box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+              position: fixed;
+              height: 100vh;
+              overflow-y: auto;
+          }
 
-        .sidebar-logo {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--heading-color);
-            margin-bottom: 3rem;
-            text-align: center;
-        }
+          .sidebar-logo {
+              font-size: 2.25rem;
+              font-weight: 800;
+              color: #ffffff;
+              background: linear-gradient(45deg, rgba(108, 30, 116, 0.9) 0%, rgba(140, 40, 150, 0.7) 100%);
+              backdrop-filter: blur(20px);
+              border-radius: 1.25rem;
+              padding: 1.5rem;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+              margin-bottom: 3rem;
+              text-align: center;
+          }
 
-        .sidebar-nav-item {
-            display: block;
-            padding: 1rem 1.25rem;
-            margin-bottom: 0.75rem;
-            border-radius: 0.75rem;
-            color: var(--text-color);
-            font-size: 1.4rem; /* Increased font size as requested */
-            font-weight: 500;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-        }
+          .sidebar-nav-item {
+              display: block;
+              padding: 1rem 1.25rem;
+              margin-bottom: 0.75rem;
+              border-radius: 0.75rem;
+              color: var(--text-color);
+              font-size: 1.4rem;
+              font-weight: 500;
+              transition: all 0.2s ease-in-out;
+              cursor: pointer;
+          }
 
-        .sidebar-nav-item:hover {
-            background-color: rgba(108, 30, 116, 0.1);
-            color: var(--primary-purple);
-        }
+          .sidebar-nav-item:hover {
+              background-color: rgba(108, 30, 116, 0.1);
+              color: var(--primary-purple);
+          }
 
-        .sidebar-nav-item.active {
-            background-color: var(--primary-purple);
-            color: #ffffff;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+          .sidebar-nav-item.active {
+              background-color: var(--primary-purple);
+              color: #ffffff;
+              font-weight: 600;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          }
 
-        .main-content {
-            flex-grow: 1;
-            padding: 3rem;
-            overflow-y: auto;
-        }
-        
-        .top-level-box {
-            margin-bottom: 3rem;
-            padding: 3rem;
-            background-color: var(--card-background);
-            backdrop-filter: blur(20px);
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 1px solid var(--border-color);
-        }
-        .top-level-box-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-purple);
-            margin-bottom: 2rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 1.5rem;
-        }
+          .main-content {
+              flex-grow: 1;
+              padding: 3rem;
+              margin-left: 280px; /* Offset for fixed sidebar */
+          }
+          
+          .top-level-box {
+              margin-bottom: 3rem;
+              padding: 3rem;
+              background-color: var(--card-background);
+              backdrop-filter: blur(20px);
+              border-radius: 1.5rem;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+              border: 1px solid var(--border-color);
+          }
+          .top-level-box-title {
+              font-size: 2.5rem;
+              font-weight: 700;
+              color: var(--primary-purple);
+              margin-bottom: 2rem;
+              border-bottom: 2px solid var(--border-color);
+              padding-bottom: 1.5rem;
+              text-align: center;
+          }
 
-        .sub-box {
-            padding: 2rem;
-            background-color: rgba(108, 30, 116, 0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 1.25rem;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(108, 30, 116, 0.1);
-        }
-        .sub-box-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--heading-color);
-            margin-bottom: 1.5rem;
-        }
-        .metric-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(108, 30, 116, 0.15);
-        }
-        .metric-item:last-child {
-            border-bottom: none;
-        }
-        .metric-label {
-            font-size: 1.1rem;
-            color: var(--text-color);
-        }
-        .metric-value {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--primary-purple);
-        }
-        
-        .error-message-box {
-            text-align: center;
-            color: #d32f2f;
-            background-color: #ffebee;
-            padding: 2rem;
-            border-radius: 1rem;
-            margin-top: 2rem;
-            border: 1px solid #d32f2f;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .spinner {
-            border: 6px solid rgba(108, 30, 116, 0.2);
-            border-left-color: var(--primary-purple);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loader-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 50vh;
-        }
-        
-        .last-updated-text {
-            text-align: center;
-            margin-top: 3rem;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
+          .sub-box {
+              padding: 2rem;
+              background-color: rgba(108, 30, 116, 0.05);
+              backdrop-filter: blur(20px);
+              border-radius: 1.25rem;
+              box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+              border: 1px solid rgba(108, 30, 116, 0.1);
+          }
+          .sub-box-title {
+              font-size: 1.5rem;
+              font-weight: 600;
+              color: var(--heading-color);
+              margin-bottom: 1.5rem;
+              text-align: center;
+          }
+          .metric-item {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 0.75rem 0;
+              border-bottom: 1px solid rgba(108, 30, 116, 0.15);
+          }
+          .metric-item:last-child {
+              border-bottom: none;
+          }
+          .metric-label {
+              font-size: 1.1rem;
+              color: var(--text-color);
+          }
+          .metric-value {
+              font-size: 1.1rem;
+              font-weight: 700;
+              color: var(--primary-purple);
+          }
+          
+          .last-updated-text {
+              text-align: center;
+              font-size: 0.9rem;
+              color: #6b7280;
+          }
+          
+          .scorecard-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+              gap: 1.5rem;
+          }
+          
+          .scorecard {
+              display: flex;
+              align-items: center;
+              background: linear-gradient(45deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.5) 100%);
+              backdrop-filter: blur(20px);
+              border: 1px solid rgba(108, 30, 116, 0.15);
+              border-radius: 1.25rem;
+              padding: 2rem;
+              box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+              transition: transform 0.2s ease-in-out;
+          }
 
-        /* Responsive styles for mobile */
-        @media (max-width: 768px) {
-            .dashboard-container {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                height: auto;
-                flex-direction: row;
-                justify-content: space-around;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                padding: 1.5rem 1rem;
-            }
-            .sidebar-logo {
-                display: none;
-            }
-            .main-content {
-                padding: 1.5rem;
-            }
-            .top-level-box-title {
-                text-align: center;
-            }
-            .sub-box-title {
-                text-align: center;
-            }
-        }
-    </style>
-</head>
-<body>
+          .scorecard:hover {
+            transform: translateY(-5px);
+          }
+          
+          .scorecard-icon {
+              width: 3.5rem;
+              height: 3.5rem;
+              flex-shrink: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: rgba(108, 30, 116, 0.1);
+              border-radius: 50%;
+              margin-right: 1.5rem;
+              color: var(--primary-purple);
+          }
+          
+          .scorecard-content h3 {
+              font-size: 1.1rem;
+              font-weight: 500;
+              color: var(--text-color);
+              margin-bottom: 0.25rem;
+          }
+          
+          .scorecard-content p {
+              font-size: 2.25rem;
+              font-weight: 700;
+              color: var(--primary-purple);
+          }
+          
+          .chart-container {
+              background-color: var(--card-background);
+              backdrop-filter: blur(20px);
+              border-radius: 1.5rem;
+              padding: 2rem;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+              border: 1px solid var(--border-color);
+          }
 
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-logo">Dashboard</div>
-            <nav>
-                <a href="#" class="sidebar-nav-item active" data-target="overview">Overview</a>
-                <a href="#" class="sidebar-nav-item" data-target="daily">Daily Metrics</a>
-                <a href="#" class="sidebar-nav-item" data-target="settings">Settings</a>
-            </nav>
+          /* Responsive styles for mobile */
+          @media (max-width: 768px) {
+              .dashboard-container {
+                  flex-direction: column;
+              }
+              .sidebar {
+                  width: 100%;
+                  height: auto;
+                  flex-direction: row;
+                  justify-content: space-around;
+                  border-right: none;
+                  border-bottom: 1px solid var(--border-color);
+                  padding: 1.5rem 1rem;
+                  position: relative;
+                  margin-bottom: 2rem;
+              }
+              .sidebar-logo {
+                  display: none;
+              }
+              .main-content {
+                  padding: 1.5rem;
+                  margin-left: 0;
+              }
+              .top-level-box-title {
+                  text-align: center;
+                  font-size: 2rem;
+              }
+              .sub-box-title {
+                  text-align: center;
+              }
+          }
+        `}
+      </style>
+      <div className="dashboard-container">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="sidebar-logo">Dashboard</div>
+          <nav>
+            <a onClick={() => scrollToRef(overviewRef)} className="sidebar-nav-item">Overview</a>
+            <a onClick={() => scrollToRef(dailyMetricsRef)} className="sidebar-nav-item">Daily Metrics</a>
+            <a onClick={() => scrollToRef(settingsRef)} className="sidebar-nav-item">Settings</a>
+          </nav>
         </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- No main title is present to prevent duplication -->
-
-            <!-- Section containers -->
-            <div id="overview-section" class="section-container">
-                <!-- Overview metrics will be rendered here -->
-            </div>
-            
-            <div id="daily-section" class="section-container hidden">
-                <!-- Daily metrics will be rendered here -->
-            </div>
-
-            <div id="settings-section" class="section-container hidden">
-                <div class="top-level-box">
-                    <h2 class="top-level-box-title">Settings</h2>
-                    <p class="text-gray-600">This section is a placeholder for user settings.</p>
-                </div>
-            </div>
-
-            <div id="last-updated-footer" class="last-updated-text"></div>
+        {/* Main Content Area */}
+        <main className="main-content">
+          {renderContent()}
         </main>
-    </div>
+      </div>
+    </>
+  );
+};
 
-    <script>
-        const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
-        const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+// Create a root and render the App component
+const container = document.getElementById('root');
+if (!container) {
+  const newDiv = document.createElement('div');
+  newDiv.id = 'root';
+  document.body.appendChild(newDiv);
+}
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
 
-        function showLoadingIndicator(containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
-        }
+// Add a script tag to load the React and ReactDOM libraries from a CDN
+const scriptReact = document.createElement('script');
+scriptReact.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
+document.head.appendChild(scriptReact);
 
-        function showFailureMessage(containerId, message) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `
-                <div class="error-message-box">
-                    <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
-                    <p class="text-lg">${message}</p>
-                    <p class="mt-4">Please check the console for more details.</p>
-                </div>
-            `;
-        }
-
-        async function fetchCSVData(url) {
-            console.log(`Attempting to fetch data from: ${url}`);
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const text = await response.text();
-                console.log(`Successfully fetched data from ${url}`);
-                if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
-                    console.error("The Google Sheets URL is invalid or the file does not exist.");
-                    return null;
-                }
-                return text;
-            } catch (error) {
-                console.error("Could not fetch CSV data:", error);
-                return null;
-            }
-        }
-        
-        function parseCSV(csv) {
-            const lines = csv.split('\n').filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                console.error("CSV data has fewer than 2 lines (header + data).");
-                return [];
-            }
-            const headers = lines[0].split(',').map(header => header.trim());
-            const data = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                // Regex to handle commas inside quoted strings
-                const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
-                const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
-
-                if (trimmedValues.length === headers.length) {
-                    const obj = {};
-                    for (let j = 0; j < headers.length; j++) {
-                        obj[headers[j]] = trimmedValues[j];
-                    }
-                    data.push(obj);
-                }
-            }
-            return data;
-        }
-
-        function renderOverviewDashboard(data) {
-            const container = document.getElementById('overview-section');
-            container.innerHTML = '';
-            if (!data || data.length === 0) {
-                showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
-                return;
-            }
-            const groupedData = data.reduce((acc, row) => {
-                const topLevelBox = row['Top-Level Box'];
-                const subBoxHeader = row['Sub-Box Header'];
-                if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
-                if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
-                acc[topLevelBox][subBoxHeader].push(row);
-                return acc;
-            }, {});
-
-            for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
-                const topLevelBoxEl = document.createElement('div');
-                topLevelBoxEl.className = "top-level-box";
-                topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
-                const subBoxesContainer = document.createElement('div');
-                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
-                for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
-                    const subBoxEl = document.createElement('div');
-                    subBoxEl.className = "sub-box";
-                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
-                    const metricsContainer = subBoxEl.querySelector('div.space-y-3');
-                    metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
-                        const metricEl = document.createElement('div');
-                        metricEl.className = "metric-item";
-                        metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
-                        metricsContainer.appendChild(metricEl);
-                    });
-                    subBoxesContainer.appendChild(subBoxEl);
-                }
-                topLevelBoxEl.appendChild(subBoxesContainer);
-                container.appendChild(topLevelBoxEl);
-            }
-        }
-
-        function renderDailyMetricsDashboard(data) {
-            const container = document.getElementById('daily-section');
-            container.innerHTML = '';
-            if (!data || data.length === 0) {
-                 showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
-                return;
-            }
-
-            const topLevelBoxEl = document.createElement('div');
-            topLevelBoxEl.className = "top-level-box";
-            topLevelBoxEl.innerHTML = `
-                <h2 class="top-level-box-title">Daily Metrics</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-            `;
-            const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
-
-            data.forEach(metric => {
-                if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
-                    return;
-                }
-                const subBoxEl = document.createElement('div');
-                subBoxEl.className = "sub-box";
-                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
-                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
-                ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
-                    if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
-                        const metricEl = document.createElement('div');
-                        metricEl.className = "metric-item";
-                        metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
-                        metricsContainer.appendChild(metricEl);
-                    }
-                });
-                subBoxesContainer.appendChild(subBoxEl);
-            });
-            container.appendChild(topLevelBoxEl);
-        }
-        
-        function handleNavigation(overviewData, dailyMetricsData) {
-            const navItems = document.querySelectorAll('.sidebar-nav-item');
-            const sections = document.querySelectorAll('.section-container');
-            navItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = item.dataset.target + '-section';
-                    navItems.forEach(nav => nav.classList.remove('active'));
-                    item.classList.add('active');
-                    sections.forEach(section => section.classList.add('hidden'));
-                    document.getElementById(targetId).classList.remove('hidden');
-
-                    if (item.dataset.target === 'overview') {
-                        renderOverviewDashboard(overviewData);
-                    } else if (item.dataset.target === 'daily') {
-                        renderDailyMetricsDashboard(dailyMetricsData);
-                    }
-                });
-            });
-        }
-        
-        function updateLastUpdatedTime() {
-            const now = new Date();
-            const formattedTime = now.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
-        }
-
-        async function initializeDashboard() {
-            showLoadingIndicator('overview-section');
-            showLoadingIndicator('daily-section');
-            
-            updateLastUpdatedTime();
-
-            // Fetch both data sources in parallel
-            const [overviewCsv, dailyMetricsCsv] = await Promise.all([
-                fetchCSVData(OVERVIEW_URL),
-                fetchCSVData(DAILY_METRICS_URL)
-            ]);
-
-            const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
-            const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
-
-            renderOverviewDashboard(overviewData);
-            handleNavigation(overviewData, dailyMetricsData);
-        }
-
-        document.addEventListener('DOMContentLoaded', initializeDashboard);
-    </script>
-</body>
-</html>
+const scriptReactDOM = document.createElement('script');
+scriptReactDOM.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
+document.head.appendChild(scriptReactDOM);
