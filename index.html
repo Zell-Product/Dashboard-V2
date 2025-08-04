@@ -19,6 +19,7 @@
             --border-color: rgba(108, 30, 116, 0.2);
             --text-color: #374151;
             --heading-color: #1f2937;
+            --sidebar-width: 280px;
         }
 
         body {
@@ -30,16 +31,18 @@
             box-sizing: border-box;
             color: var(--text-color);
             min-height: 100vh;
+            /* Prevent body from scrolling */
+            overflow: hidden; 
         }
         
         .dashboard-container {
+            /* Use a flexbox container to hold the fixed sidebar and the scrollable content */
             display: flex;
             min-height: 100vh;
-            justify-content: center;
         }
 
         .sidebar {
-            width: 280px;
+            width: var(--sidebar-width);
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
@@ -48,6 +51,12 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+            /* Fixed position for the sidebar */
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 10;
         }
 
         .sidebar-logo {
@@ -83,9 +92,12 @@
         }
 
         .main-content {
+            /* Push content to the right to make space for the fixed sidebar */
+            margin-left: var(--sidebar-width);
             flex-grow: 1;
             padding: 3rem;
-            overflow-y: auto;
+            overflow-y: auto; /* Allow the content to scroll */
+            height: 100vh;
         }
         
         .top-level-box {
@@ -178,8 +190,15 @@
             color: #6b7280;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         /* Responsive styles for mobile */
         @media (max-width: 768px) {
+            body {
+                overflow: auto; /* Allow body scrolling on mobile */
+            }
             .dashboard-container {
                 flex-direction: column;
             }
@@ -191,12 +210,18 @@
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
                 padding: 1.5rem 1rem;
+                /* Reset fixed positioning for mobile */
+                position: static;
+                height: auto;
             }
             .sidebar-logo {
                 display: none;
             }
             .main-content {
                 padding: 1.5rem;
+                /* Reset margin for mobile to take full width */
+                margin-left: 0;
+                height: auto;
             }
             .top-level-box-title {
                 text-align: center;
