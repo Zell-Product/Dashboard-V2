@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iOS-Inspired Dashboard</title>
-    <!-- Add a favicon for better browser experience -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
-
-    <!-- CDN imports for React, Tailwind, and other libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
     <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.min.js"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
@@ -24,10 +20,6 @@
             --border-color: rgba(108, 30, 116, 0.2);
             --text-color: #374151;
             --heading-color: #1f2937;
-        }
-
-        html {
-            scroll-behavior: smooth;
         }
 
         body {
@@ -259,12 +251,13 @@
             }
         }
 
-        .loader-container, .error-container {
+        .loader-container {
             display: flex;
             align-items: center;
             justify-content: center;
+            height: 100%;
+            width: 100%;
             min-height: 100vh;
-            padding: 2rem;
         }
         .w-16 { width: 4rem; }
         .h-16 { height: 4rem; }
@@ -277,110 +270,60 @@
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        .text-red-600 { color: #dc2626; }
-        .bg-red-50 { background-color: #fef2f2; }
-        .border-red-300 { border-color: #fca5a5; }
-        .text-red-500 { color: #ef4444; }
-        .bg-yellow-50 { background-color: #fffbeb; }
-        .border-yellow-300 { border-color: #fde68a; }
-        .text-yellow-600 { color: #d97706; }
     </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script>
     const { useState, useEffect, useRef } = React;
     const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
     const { Users, CalendarClock, CloudDownload, BarChart2, FileSpreadsheet } = lucide;
 
-    // Use the online published Google Sheets URLs as requested
     const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
     const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
 
     const App = () => {
-        // State variables to hold the raw CSV data
         const [overviewData, setOverviewData] = useState([]);
         const [dailyMetricsData, setDailyMetricsData] = useState([]);
-        // State variables for application status and error handling
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState(null);
-        // Refs for scrolling to sections
         const overviewRef = useRef(null);
         const dailyMetricsRef = useRef(null);
         const settingsRef = useRef(null);
-        
-        const sectionRefs = {
-            'overview-section': overviewRef,
-            'daily-section': dailyMetricsRef,
-            'settings-section': settingsRef
-        };
 
-        /**
-         * Fetches CSV data from a given URL with retries and robust error handling.
-         * This function is crucial for ensuring data is loaded from the online source.
-         * @param {string} url The URL of the CSV file.
-         * @param {number} retries The number of times to retry on failure.
-         * @param {number} delay The initial delay in milliseconds for exponential backoff.
-         * @returns {Promise<string|null>} The CSV data as a string, or null on failure.
-         */
-        const fetchCSVData = async (url, retries = 3, delay = 1000) => {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            throw new Error(`The requested file at URL ${url} was not found (404).`);
-                        }
-                        throw new Error(`HTTP error! status: ${response.status} for URL ${url}`);
-                    }
-                    const text = await response.text();
-                    // Google Sheets can return an "empty" page with this text
-                    if (text.includes("Sorry, the file you have requested does not exist.")) {
-                        throw new Error("The Google Sheets URL is invalid or the file does not exist.");
-                    }
-                    return text;
-                } catch (error) {
-                    console.error(`Attempt ${i + 1} failed:`, error.message);
-                    if (i < retries - 1) {
-                        await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
-                    } else {
-                        // Throw the error on the last attempt
-                        throw error;
-                    }
+        const fetchCSVData = async (url) => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const text = await response.text();
+                if (text.includes("Sorry, the file you have requested does not exist.")) {
+                    throw new Error("The Google Sheets URL is invalid or the file does not exist.");
                 }
+                return text;
+            } catch (error) {
+                console.error("Could not fetch CSV data:", error);
+                return null;
             }
-            return null;
         };
 
-        /**
-         * Parses a CSV string into an array of objects.
-         * @param {string} csv The CSV data as a string.
-         * @returns {Array<Object>} An array of objects representing the CSV data.
-         */
         const parseCSV = (csv) => {
-            if (!csv) return [];
             const lines = csv.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) return [];
             const headers = lines[0].split(',').map(header => header.trim());
             const data = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
-                // Use a regex to handle commas inside double quotes
                 const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
                 const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
                 if (trimmedValues.length === headers.length) {
                     const obj = {};
                     for (let j = 0; j < headers.length; j++) obj[headers[j]] = trimmedValues[j];
                     data.push(obj);
-                } else {
-                    console.warn(`Skipping malformed row: ${line}`);
                 }
             }
             return data;
         };
 
-        // Main effect to fetch data on component mount, as per your request
         useEffect(() => {
             const initializeDashboard = async () => {
                 setLoading(true);
@@ -390,13 +333,11 @@
                         fetchCSVData(OVERVIEW_URL),
                         fetchCSVData(DAILY_METRICS_URL)
                     ]);
-                    // Check if data was fetched successfully before parsing
                     if (overviewCsv) setOverviewData(parseCSV(overviewCsv));
                     if (dailyMetricsCsv) setDailyMetricsData(parseCSV(dailyMetricsCsv));
-                    
                 } catch (e) {
-                    console.error("Failed to load data:", e);
-                    setError("Failed to load data. Please check the data sources and your network connection. Error: " + e.message);
+                    setError("Failed to load data. Please check the network connection and data sources.");
+                    console.error(e);
                 } finally {
                     setLoading(false);
                 }
@@ -407,15 +348,9 @@
         const scrollToRef = (ref) => {
             if (ref && ref.current) ref.current.scrollIntoView({ behavior: 'smooth' });
         };
-        
-        const handleNavClick = (sectionId) => {
-            const ref = sectionRefs[sectionId];
-            scrollToRef(ref);
-        };
 
-        // Memoized data processing functions for better performance
-        const processOverviewData = React.useMemo(() => {
-            return overviewData.reduce((acc, row) => {
+        const processOverviewData = (data) => {
+            return data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
                 if (!acc[topLevelBox]) acc[topLevelBox] = {};
@@ -423,22 +358,23 @@
                 acc[topLevelBox][subBoxHeader].push(row);
                 return acc;
             }, {});
-        }, [overviewData]);
+        };
+        const processedOverviewData = processOverviewData(overviewData);
 
-        const scorecards = React.useMemo(() => {
-            const dau = dailyMetricsData.find(d => d['Cumulative'] === 'DAU')?.WEB || 'NA';
-            const mau = dailyMetricsData.find(d => d['Cumulative'] === 'MAU')?.WEB || 'NA';
-            const visitors = dailyMetricsData.find(d => d['Cumulative'] === 'Total Visitors')?.WEB || 'NA';
+        const getDailyMetricsScorecards = (data) => {
+            const dau = data.find(d => d['Cumulative'] === 'DAU')?.WEB || 'NA';
+            const mau = data.find(d => d['Cumulative'] === 'MAU')?.WEB || 'NA';
+            const visitors = data.find(d => d['Cumulative'] === 'Total Visitors')?.WEB || 'NA';
             return { dau, mau, visitors };
-        }, [dailyMetricsData]);
-
-        const dailyMetricsSubBoxes = React.useMemo(() => {
-            return dailyMetricsData.filter(metric =>
+        };
+        const getDailyMetricsSubBoxes = (data) => {
+            return data.filter(metric =>
                 !['Cumulative', 'DAU', 'MAU', 'Active Users', 'Total Visitors'].includes(metric['Cumulative']) &&
                 metric['Cumulative'] && metric['Cumulative'].trim() !== ''
             );
-        }, [dailyMetricsData]);
-
+        };
+        const scorecards = getDailyMetricsScorecards(dailyMetricsData);
+        const dailyMetricsSubBoxes = getDailyMetricsSubBoxes(dailyMetricsData);
 
         const mockDauChartData = [
             { name: 'Mon', users: 1600 },
@@ -449,37 +385,28 @@
             { name: 'Sat', users: 1700 },
             { name: 'Sun', users: 1690 },
         ];
-        
-        // This function handles the conditional rendering based on the app's state
+
         const renderContent = () => {
             if (loading) {
-                return React.createElement('div', { className: 'loader-container' },
-                    React.createElement('div', { className: 'w-16 h-16 border-4 border-purple-200 border-l-purple-600 rounded-full animate-spin' })
+                return React.createElement('div', { className: 'flex flex-grow items-center justify-center min-h-screen' },
+                    React.createElement('div', { className: 'loader-container' },
+                        React.createElement('div', { className: 'w-16 h-16 border-4 border-purple-200 border-l-purple-600 rounded-full animate-spin' })
+                    )
                 );
             }
             if (error) {
-                return React.createElement('div', { className: 'error-container' },
-                    React.createElement('div', { className: 'text-center p-8 bg-red-50 border border-red-300 rounded-2xl shadow-lg max-w-lg mx-auto' },
-                        React.createElement('h3', { className: 'text-2xl font-bold text-red-600 mb-4' }, 'Data Loading Error'),
-                        React.createElement('p', { className: 'text-lg text-red-500' }, error),
-                        React.createElement('p', { className: 'text-sm text-gray-500 mt-4' }, 'Please ensure the Google Sheets are publicly accessible via the provided links and try again.')
+                return React.createElement('div', { className: 'flex flex-grow items-center justify-center min-h-screen p-8' },
+                    React.createElement('div', { className: 'text-center p-8 bg-red-50 border border-red-300 rounded-2xl shadow-lg' },
+                        React.createElement('h3', { className: 'text-2xl font-bold text-red-600 mb-4' }, 'Error'),
+                        React.createElement('p', { className: 'text-lg text-red-500' }, error)
                     )
                 );
             }
-            if (Object.keys(processOverviewData).length === 0 && dailyMetricsData.length === 0) {
-                 return React.createElement('div', { className: 'error-container' },
-                    React.createElement('div', { className: 'text-center p-8 bg-yellow-50 border border-yellow-300 rounded-2xl shadow-lg max-w-lg mx-auto' },
-                        React.createElement('h3', { className: 'text-2xl font-bold text-yellow-600 mb-4' }, 'No Data Available'),
-                        React.createElement('p', { className: 'text-lg text-yellow-500' }, 'The dashboard could not load any data. Please check the source URLs.')
-                    )
-                );
-            }
-
             return React.createElement(React.Fragment, null,
                 React.createElement('section', { id: 'overview-section', ref: overviewRef, className: 'pt-24 pb-8' },
                     React.createElement('div', { className: 'top-level-box' },
                         React.createElement('h2', { className: 'top-level-box-title' }, 'Overview Metrics'),
-                        Object.entries(processOverviewData).map(([topLevelBox, subBoxes]) => (
+                        Object.entries(processedOverviewData).map(([topLevelBox, subBoxes]) => (
                             React.createElement('div', { key: topLevelBox, className: 'mb-8' },
                                 React.createElement('h3', { className: 'text-2xl font-semibold text-gray-800 mb-4' }, topLevelBox),
                                 React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
@@ -577,42 +504,27 @@
             );
         };
         
-        const Sidebar = ({ onNavClick }) => {
-            const [activeSection, setActiveSection] = useState('overview-section');
-            const handleSectionClick = (sectionId) => {
-              setActiveSection(sectionId);
-              onNavClick(sectionId);
-            };
-
-            return React.createElement('aside', { className: 'sidebar' },
-                React.createElement('div', { className: 'sidebar-logo' }, 'Dashboard'),
-                React.createElement('nav', null,
-                    React.createElement('a', { onClick: () => handleSectionClick('overview-section'), className: `sidebar-nav-item ${activeSection === 'overview-section' ? 'active' : ''}` }, React.createElement(Users, { className: 'w-6 h-6' }), ' Overview'),
-                    React.createElement('a', { onClick: () => handleSectionClick('daily-section'), className: `sidebar-nav-item ${activeSection === 'daily-section' ? 'active' : ''}` }, React.createElement(BarChart2, { className: 'w-6 h-6' }), ' Daily Metrics'),
-                    React.createElement('a', { onClick: () => handleSectionClick('settings-section'), className: `sidebar-nav-item ${activeSection === 'settings-section' ? 'active' : ''}` }, React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }), ' Settings')
-                )
-            );
-        };
-
         return React.createElement(React.Fragment, null,
             React.createElement('div', { className: 'dashboard-container' },
-                React.createElement(Sidebar, { onNavClick: handleNavClick }),
+                React.createElement('aside', { className: 'sidebar' },
+                    React.createElement('div', { className: 'sidebar-logo' }, 'Dashboard'),
+                    React.createElement('nav', null,
+                        React.createElement('a', { onClick: () => scrollToRef(overviewRef), className: 'sidebar-nav-item' }, React.createElement(Users, { className: 'w-6 h-6' }), ' Overview'),
+                        React.createElement('a', { onClick: () => scrollToRef(dailyMetricsRef), className: 'sidebar-nav-item' }, React.createElement(BarChart2, { className: 'w-6 h-6' }), ' Daily Metrics'),
+                        React.createElement('a', { onClick: () => scrollToRef(settingsRef), className: 'sidebar-nav-item' }, React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }), ' Settings')
+                    )
+                ),
                 React.createElement('main', { className: 'main-content' }, renderContent())
             )
         );
     };
 
-    const renderApp = () => {
+    window.onload = function() {
         const rootElement = document.getElementById('root');
         if (rootElement) {
             ReactDOM.createRoot(rootElement).render(React.createElement(App, null));
-        } else {
-            console.error("Root element with id 'root' not found.");
         }
     };
-
-    // Use DOMContentLoaded for reliable and fast rendering
-    document.addEventListener('DOMContentLoaded', renderApp);
 </script>
 </body>
 </html>
