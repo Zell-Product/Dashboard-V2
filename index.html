@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Functional Dashboard</title>
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
-    
-    <!-- CDN Imports -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <title>Overall Metrics Dashboard</title>
+    <!-- Correct favicon link for a .png file -->
+    <link rel="icon" href="favicon.png" type="image/png">
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
-    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.min.js"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    
+        
+        /* Define theme colors for a light, iOS-inspired Glass UI */
         :root {
             --primary-purple: #6c1e74;
             --light-background: #f0f4f9;
@@ -24,10 +19,6 @@
             --border-color: rgba(108, 30, 116, 0.2);
             --text-color: #374151;
             --heading-color: #1f2937;
-        }
-
-        html {
-            scroll-behavior: smooth;
         }
 
         body {
@@ -39,12 +30,12 @@
             box-sizing: border-box;
             color: var(--text-color);
             min-height: 100vh;
-            overflow-x: hidden;
         }
         
         .dashboard-container {
             display: flex;
             min-height: 100vh;
+            justify-content: center;
         }
 
         .sidebar {
@@ -57,39 +48,26 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 12px rgba(0,0,0,0.1);
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
         }
 
         .sidebar-logo {
-            font-size: 2.25rem;
+            font-size: 1.75rem;
             font-weight: 800;
-            color: #ffffff;
-            background: linear-gradient(45deg, rgba(108, 30, 116, 0.9) 0%, rgba(140, 40, 150, 0.7) 100%);
-            backdrop-filter: blur(20px);
-            border-radius: 1.25rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            color: var(--heading-color);
             margin-bottom: 3rem;
             text-align: center;
         }
 
         .sidebar-nav-item {
-            display: flex;
-            align-items: center;
+            display: block;
             padding: 1rem 1.25rem;
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             color: var(--text-color);
-            font-size: 1.4rem;
+            font-size: 1.4rem; /* Increased font size as requested */
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
-        }
-
-        .sidebar-nav-item svg {
-            margin-right: 1rem;
         }
 
         .sidebar-nav-item:hover {
@@ -107,7 +85,7 @@
         .main-content {
             flex-grow: 1;
             padding: 3rem;
-            margin-left: 280px; /* Offset for fixed sidebar */
+            overflow-y: auto;
         }
         
         .top-level-box {
@@ -120,13 +98,12 @@
             border: 1px solid var(--border-color);
         }
         .top-level-box-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--primary-purple);
             margin-bottom: 2rem;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 1.5rem;
-            text-align: center;
         }
 
         .sub-box {
@@ -142,7 +119,6 @@
             font-weight: 600;
             color: var(--heading-color);
             margin-bottom: 1.5rem;
-            text-align: center;
         }
         .metric-item {
             display: flex;
@@ -164,67 +140,42 @@
             color: var(--primary-purple);
         }
         
+        .error-message-box {
+            text-align: center;
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-top: 2rem;
+            border: 1px solid #d32f2f;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .spinner {
+            border: 6px solid rgba(108, 30, 116, 0.2);
+            border-left-color: var(--primary-purple);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50vh;
+        }
+        
         .last-updated-text {
             text-align: center;
+            margin-top: 3rem;
             font-size: 0.9rem;
             color: #6b7280;
-        }
-        
-        .scorecard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .scorecard {
-            display: flex;
-            align-items: center;
-            background: linear-gradient(45deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.5) 100%);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(108, 30, 116, 0.15);
-            border-radius: 1.25rem;
-            padding: 2rem;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease-in-out;
-        }
-
-        .scorecard:hover {
-          transform: translateY(-5px);
-        }
-        
-        .scorecard-icon {
-            width: 3.5rem;
-            height: 3.5rem;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(108, 30, 116, 0.1);
-            border-radius: 50%;
-            margin-right: 1.5rem;
-            color: var(--primary-purple);
-        }
-        
-        .scorecard-content h3 {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: var(--text-color);
-            margin-bottom: 0.25rem;
-        }
-        
-        .scorecard-content p {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: var(--primary-purple);
-        }
-        
-        .chart-container {
-            background-color: var(--card-background);
-            backdrop-filter: blur(20px);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 1px solid var(--border-color);
         }
 
         /* Responsive styles for mobile */
@@ -240,19 +191,15 @@
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
                 padding: 1.5rem 1rem;
-                position: relative;
-                margin-bottom: 2rem;
             }
             .sidebar-logo {
                 display: none;
             }
             .main-content {
                 padding: 1.5rem;
-                margin-left: 0;
             }
             .top-level-box-title {
                 text-align: center;
-                font-size: 2rem;
             }
             .sub-box-title {
                 text-align: center;
@@ -261,258 +208,240 @@
     </style>
 </head>
 <body>
-<div id="root"></div>
 
-<script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
-    const { Users, CalendarClock, CloudDownload, BarChart2, FileSpreadsheet } = lucide;
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">Dashboard</div>
+            <nav>
+                <a href="#" class="sidebar-nav-item active" data-target="overview">Overview</a>
+                <a href="#" class="sidebar-nav-item" data-target="daily">Daily Metrics</a>
+                <a href="#" class="sidebar-nav-item" data-target="settings">Settings</a>
+            </nav>
+        </aside>
 
-    const App = () => {
-        // Hard-coded sample data to ensure the UI renders.
-        // This is a temporary measure to confirm the base app is working.
-        const sampleOverviewData = [
-            { 'Top-Level Box': 'User Analytics', 'Sub-Box Header': 'Daily Active Users (DAU)', 'Order': '1', 'Data Header': 'Web', 'Value': '2,746' },
-            { 'Top-Level Box': 'User Analytics', 'Sub-Box Header': 'Daily Active Users (DAU)', 'Order': '2', 'Data Header': 'Android', 'Value': '503' },
-            { 'Top-Level Box': 'User Analytics', 'Sub-Box Header': 'Monthly Active Users (MAU)', 'Order': '1', 'Data Header': 'Web', 'Value': '8,909' },
-            { 'Top-Level Box': 'Batches Information', 'Sub-Box Header': 'General', 'Order': '1', 'Data Header': 'Total Enrolled Students', 'Value': '3498' },
-        ];
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- No main title is present to prevent duplication -->
 
-        const sampleDailyMetricsData = [
-            { 'Cumulative': 'Downloads', 'WEB': 'NA', 'ANDROID': '3729', 'iOS': 'NA' },
-            { 'Cumulative': 'DAU', 'WEB': '1669', 'ANDROID': '503', 'iOS': 'NA' },
-            { 'Cumulative': 'MAU', 'WEB': '5667', 'ANDROID': '2951', 'iOS': 'NA' },
-        ];
+            <!-- Section containers -->
+            <div id="overview-section" class="section-container">
+                <!-- Overview metrics will be rendered here -->
+            </div>
+            
+            <div id="daily-section" class="section-container hidden">
+                <!-- Daily metrics will be rendered here -->
+            </div>
 
-        // State variables to hold the raw data
-        const [overviewData, setOverviewData] = useState(sampleOverviewData);
-        const [dailyMetricsData, setDailyMetricsData] = useState(sampleDailyMetricsData);
+            <div id="settings-section" class="section-container hidden">
+                <div class="top-level-box">
+                    <h2 class="top-level-box-title">Settings</h2>
+                    <p class="text-gray-600">This section is a placeholder for user settings.</p>
+                </div>
+            </div>
+
+            <div id="last-updated-footer" class="last-updated-text"></div>
+        </main>
+    </div>
+
+    <script>
+        const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
+        const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
+
+        function showLoadingIndicator(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
+        }
+
+        function showFailureMessage(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="error-message-box">
+                    <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
+                    <p class="text-lg">${message}</p>
+                    <p class="mt-4">Please check the console for more details.</p>
+                </div>
+            `;
+        }
+
+        async function fetchCSVData(url) {
+            console.log(`Attempting to fetch data from: ${url}`);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const text = await response.text();
+                console.log(`Successfully fetched data from ${url}`);
+                if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
+                    console.error("The Google Sheets URL is invalid or the file does not exist.");
+                    return null;
+                }
+                return text;
+            } catch (error) {
+                console.error("Could not fetch CSV data:", error);
+                return null;
+            }
+        }
         
-        // This is a placeholder for future live data fetching logic
-        const [loading, setLoading] = useState(false);
-        const [error, setError] = useState(null);
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                console.error("CSV data has fewer than 2 lines (header + data).");
+                return [];
+            }
+            const headers = lines[0].split(',').map(header => header.trim());
+            const data = [];
 
-        // Refs for scrolling to sections
-        const overviewRef = useRef(null);
-        const dailyMetricsRef = useRef(null);
-        const settingsRef = useRef(null);
-        
-        const sectionRefs = {
-            'overview-section': overviewRef,
-            'daily-section': dailyMetricsRef,
-            'settings-section': settingsRef
-        };
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                // Regex to handle commas inside quoted strings
+                const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
+                const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
 
-        const scrollToRef = (ref) => {
-            if (ref && ref.current) ref.current.scrollIntoView({ behavior: 'smooth' });
-        };
-        
-        const handleNavClick = (sectionId) => {
-            const ref = sectionRefs[sectionId];
-            scrollToRef(ref);
-        };
+                if (trimmedValues.length === headers.length) {
+                    const obj = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        obj[headers[j]] = trimmedValues[j];
+                    }
+                    data.push(obj);
+                }
+            }
+            return data;
+        }
 
-        // Memoized data processing functions for better performance
-        const processOverviewData = React.useMemo(() => {
-            return overviewData.reduce((acc, row) => {
+        function renderOverviewDashboard(data) {
+            const container = document.getElementById('overview-section');
+            container.innerHTML = '';
+            if (!data || data.length === 0) {
+                showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the URL, your network connection, and the console for errors.');
+                return;
+            }
+            const groupedData = data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
-                if (!acc[topLevelBox]) acc[topLevelBox] = {};
-                if (!acc[topLevelBox][subBoxHeader]) acc[topLevelBox][subBoxHeader] = [];
+                if (!acc[topLevelBox]) { acc[topLevelBox] = {}; }
+                if (!acc[topLevelBox][subBoxHeader]) { acc[topLevelBox][subBoxHeader] = []; }
                 acc[topLevelBox][subBoxHeader].push(row);
                 return acc;
             }, {});
-        }, [overviewData]);
 
-        const scorecards = React.useMemo(() => {
-            const dau = dailyMetricsData.find(d => d['Cumulative'] === 'DAU')?.WEB || 'NA';
-            const mau = dailyMetricsData.find(d => d['Cumulative'] === 'MAU')?.WEB || 'NA';
-            const visitors = 'Placeholder'; // Sample data doesn't have this, so a placeholder is used
-            return { dau, mau, visitors };
-        }, [dailyMetricsData]);
-
-        const dailyMetricsSubBoxes = React.useMemo(() => {
-            return dailyMetricsData.filter(metric =>
-                !['Cumulative', 'DAU', 'MAU', 'Active Users', 'Total Visitors'].includes(metric['Cumulative']) &&
-                metric['Cumulative'] && metric['Cumulative'].trim() !== ''
-            );
-        }, [dailyMetricsData]);
-
-        const mockDauChartData = [
-            { name: 'Mon', users: 1600 },
-            { name: 'Tue', users: 1650 },
-            { name: 'Wed', users: 1750 },
-            { name: 'Thu', users: 1800 },
-            { name: 'Fri', users: 1780 },
-            { name: 'Sat', users: 1700 },
-            { name: 'Sun', users: 1690 },
-        ];
-        
-        // This function handles the conditional rendering based on the app's state
-        const renderContent = () => {
-            // Note: Loading and error states are currently hard-coded to false/null
-            // to ensure the UI renders. Live data fetching will re-introduce this logic.
-            if (loading) {
-                return React.createElement('div', { className: 'loader-container' },
-                    React.createElement('div', { className: 'w-16 h-16 border-4 border-purple-200 border-l-purple-600 rounded-full animate-spin' })
-                );
+            for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
+                const topLevelBoxEl = document.createElement('div');
+                topLevelBoxEl.className = "top-level-box";
+                topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
+                const subBoxesContainer = document.createElement('div');
+                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+                for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
+                    const subBoxEl = document.createElement('div');
+                    subBoxEl.className = "sub-box";
+                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
+                    const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                    metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
+                        const metricEl = document.createElement('div');
+                        metricEl.className = "metric-item";
+                        metricEl.innerHTML = `<span class="metric-label">${metric['Data Header']}</span><span class="metric-value">${metric['Value']}</span>`;
+                        metricsContainer.appendChild(metricEl);
+                    });
+                    subBoxesContainer.appendChild(subBoxEl);
+                }
+                topLevelBoxEl.appendChild(subBoxesContainer);
+                container.appendChild(topLevelBoxEl);
             }
-            if (error) {
-                return React.createElement('div', { className: 'error-container' },
-                    React.createElement('div', { className: 'text-center p-8 bg-red-50 border border-red-300 rounded-2xl shadow-lg max-w-lg mx-auto' },
-                        React.createElement('h3', { className: 'text-2xl font-bold text-red-600 mb-4' }, 'Data Loading Error'),
-                        React.createElement('p', { className: 'text-lg text-red-500' }, error),
-                        React.createElement('p', { className: 'text-sm text-gray-500 mt-4' }, 'This dashboard is currently configured to use hardcoded data.')
-                    )
-                );
-            }
-            if (Object.keys(processOverviewData).length === 0 && dailyMetricsData.length === 0) {
-                 return React.createElement('div', { className: 'error-container' },
-                    React.createElement('div', { className: 'text-center p-8 bg-yellow-50 border border-yellow-300 rounded-2xl shadow-lg max-w-lg mx-auto' },
-                        React.createElement('h3', { className: 'text-2xl font-bold text-yellow-600 mb-4' }, 'No Data Available'),
-                        React.createElement('p', { className: 'text-lg text-yellow-500' }, 'The dashboard could not load any data.')
-                    )
-                );
-            }
-
-            return React.createElement(React.Fragment, null,
-                React.createElement('section', { id: 'overview-section', ref: overviewRef, className: 'pt-24 pb-8' },
-                    React.createElement('div', { className: 'top-level-box' },
-                        React.createElement('h2', { className: 'top-level-box-title' }, 'Overview Metrics'),
-                        Object.entries(processOverviewData).map(([topLevelBox, subBoxes]) => (
-                            React.createElement('div', { key: topLevelBox, className: 'mb-8' },
-                                React.createElement('h3', { className: 'text-2xl font-semibold text-gray-800 mb-4' }, topLevelBox),
-                                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
-                                    Object.entries(subBoxes).map(([subBoxHeader, metrics]) => (
-                                        React.createElement('div', { key: subBoxHeader, className: 'sub-box' },
-                                            React.createElement('h4', { className: 'sub-box-title' }, subBoxHeader),
-                                            React.createElement('div', { className: 'space-y-2' },
-                                                metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).map((metric, index) => (
-                                                    React.createElement('div', { key: index, className: 'metric-item' },
-                                                        React.createElement('span', { className: 'metric-label' }, metric['Data Header']),
-                                                        React.createElement('span', { className: 'metric-value' }, metric['Value'])
-                                                    )
-                                                ))
-                                            )
-                                        )
-                                    ))
-                                )
-                            )
-                        ))
-                    )
-                ),
-                React.createElement('section', { id: 'daily-section', ref: dailyMetricsRef, className: 'py-8' },
-                    React.createElement('div', { className: 'top-level-box' },
-                        React.createElement('h2', { className: 'top-level-box-title' }, 'Daily Metrics'),
-                        React.createElement('div', { className: 'scorecard-grid mb-8' },
-                            React.createElement('div', { className: 'scorecard' },
-                                React.createElement('div', { className: 'scorecard-icon' }, React.createElement(Users, { className: 'w-7 h-7' })),
-                                React.createElement('div', { className: 'scorecard-content' },
-                                    React.createElement('h3', null, 'Daily Active Users'),
-                                    React.createElement('p', null, scorecards.dau)
-                                )
-                            ),
-                            React.createElement('div', { className: 'scorecard' },
-                                React.createElement('div', { className: 'scorecard-icon' }, React.createElement(CalendarClock, { className: 'w-7 h-7' })),
-                                React.createElement('div', { className: 'scorecard-content' },
-                                    React.createElement('h3', null, 'Monthly Active Users'),
-                                    React.createElement('p', null, scorecards.mau)
-                                )
-                            ),
-                            React.createElement('div', { className: 'scorecard' },
-                                React.createElement('div', { className: 'scorecard-icon' }, React.createElement(CloudDownload, { className: 'w-7 h-7' })),
-                                React.createElement('div', { className: 'scorecard-content' },
-                                    React.createElement('h3', null, 'Total Visitors'),
-                                    React.createElement('p', null, scorecards.visitors)
-                                )
-                            )
-                        ),
-                        React.createElement('div', { className: 'chart-container mb-8' },
-                            React.createElement('h3', { className: 'top-level-box-title !mb-4 !pb-2' }, 'Daily Active Users Trend'),
-                            React.createElement(ResponsiveContainer, { width: '100%', height: 320 },
-                                React.createElement(LineChart, { data: mockDauChartData },
-                                    React.createElement(CartesianGrid, { strokeDasharray: '3 3', strokeOpacity: 0.5 }),
-                                    React.createElement(XAxis, { dataKey: 'name', stroke: '#6c1e74' }),
-                                    React.createElement(YAxis, { stroke: '#6c1e74' }),
-                                    React.createElement(Tooltip, {
-                                        contentStyle: {
-                                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                            borderRadius: '12px',
-                                            border: '1px solid rgba(108, 30, 116, 0.2)',
-                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                                            backdropFilter: 'blur(10px)',
-                                            color: '#374151'
-                                        },
-                                        itemStyle: { color: '#6c1e74' }
-                                    }),
-                                    React.createElement(Line, { type: 'monotone', dataKey: 'users', stroke: '#6c1e74', strokeWidth: 2, dot: { r: 4 }, activeDot: { r: 6 } })
-                                )
-                            )
-                        ),
-                        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
-                            dailyMetricsSubBoxes.map((metric, index) => (
-                                React.createElement('div', { key: index, className: 'sub-box' },
-                                    React.createElement('h4', { className: 'sub-box-title' }, metric['Cumulative']),
-                                    React.createElement('div', { className: 'space-y-2' },
-                                        ['WEB', 'ANDROID', 'iOS'].map(platform => (
-                                            metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '' ?
-                                                React.createElement('div', { key: platform, className: 'metric-item' },
-                                                    React.createElement('span', { className: 'metric-label' }, platform),
-                                                    React.createElement('span', { className: 'metric-value' }, metric[platform])
-                                                ) : null
-                                        ))
-                                    )
-                                )
-                            ))
-                        )
-                    )
-                ),
-                React.createElement('section', { id: 'settings-section', ref: settingsRef, className: 'py-8' },
-                    React.createElement('div', { className: 'top-level-box' },
-                        React.createElement('h2', { className: 'top-level-box-title' }, 'Settings'),
-                        React.createElement('p', { className: 'text-gray-600' }, 'This section is a placeholder for user settings.')
-                    )
-                ),
-                React.createElement('footer', { className: 'last-updated-text py-8' }, 'Last updated: ' + new Date().toLocaleString())
-            );
-        };
-        
-        const Sidebar = ({ onNavClick }) => {
-            const [activeSection, setActiveSection] = useState('overview-section');
-            const handleSectionClick = (sectionId) => {
-              setActiveSection(sectionId);
-              onNavClick(sectionId);
-            };
-
-            return React.createElement('aside', { className: 'sidebar' },
-                React.createElement('div', { className: 'sidebar-logo' }, 'Dashboard'),
-                React.createElement('nav', null,
-                    React.createElement('a', { onClick: () => handleSectionClick('overview-section'), className: `sidebar-nav-item ${activeSection === 'overview-section' ? 'active' : ''}` }, React.createElement(Users, { className: 'w-6 h-6' }), ' Overview'),
-                    React.createElement('a', { onClick: () => handleSectionClick('daily-section'), className: `sidebar-nav-item ${activeSection === 'daily-section' ? 'active' : ''}` }, React.createElement(BarChart2, { className: 'w-6 h-6' }), ' Daily Metrics'),
-                    React.createElement('a', { onClick: () => handleSectionClick('settings-section'), className: `sidebar-nav-item ${activeSection === 'settings-section' ? 'active' : ''}` }, React.createElement(FileSpreadsheet, { className: 'w-6 h-6' }), ' Settings')
-                )
-            );
-        };
-
-        return React.createElement(React.Fragment, null,
-            React.createElement('div', { className: 'dashboard-container' },
-                React.createElement(Sidebar, { onNavClick: handleNavClick }),
-                React.createElement('main', { className: 'main-content' }, renderContent())
-            )
-        );
-    };
-
-    const renderApp = () => {
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-            ReactDOM.createRoot(rootElement).render(React.createElement(App, null));
-        } else {
-            console.error("Root element with id 'root' not found.");
         }
-    };
 
-    // Use DOMContentLoaded for reliable and fast rendering
-    document.addEventListener('DOMContentLoaded', renderApp);
-</script>
+        function renderDailyMetricsDashboard(data) {
+            const container = document.getElementById('daily-section');
+            container.innerHTML = '';
+            if (!data || data.length === 0) {
+                 showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the URL, your network connection, and the console for errors.');
+                return;
+            }
+
+            const topLevelBoxEl = document.createElement('div');
+            topLevelBoxEl.className = "top-level-box";
+            topLevelBoxEl.innerHTML = `
+                <h2 class="top-level-box-title">Daily Metrics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            `;
+            const subBoxesContainer = topLevelBoxEl.querySelector('div.grid');
+
+            data.forEach(metric => {
+                if (metric['Cumulative'] === 'Cumulative' || !metric['Cumulative'] || metric['Cumulative'].trim() === '') {
+                    return;
+                }
+                const subBoxEl = document.createElement('div');
+                subBoxEl.className = "sub-box";
+                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metric['Cumulative']}</h3><div class="space-y-3"></div>`;
+                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
+                    if (metric[platform] && metric[platform] !== 'NA' && metric[platform].trim() !== '') {
+                        const metricEl = document.createElement('div');
+                        metricEl.className = "metric-item";
+                        metricEl.innerHTML = `<span class="metric-label">${platform}</span><span class="metric-value">${metric[platform]}</span>`;
+                        metricsContainer.appendChild(metricEl);
+                    }
+                });
+                subBoxesContainer.appendChild(subBoxEl);
+            });
+            container.appendChild(topLevelBoxEl);
+        }
+        
+        function handleNavigation(overviewData, dailyMetricsData) {
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            const sections = document.querySelectorAll('.section-container');
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = item.dataset.target + '-section';
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    sections.forEach(section => section.classList.add('hidden'));
+                    document.getElementById(targetId).classList.remove('hidden');
+
+                    if (item.dataset.target === 'overview') {
+                        renderOverviewDashboard(overviewData);
+                    } else if (item.dataset.target === 'daily') {
+                        renderDailyMetricsDashboard(dailyMetricsData);
+                    }
+                });
+            });
+        }
+        
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const formattedTime = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
+        }
+
+        async function initializeDashboard() {
+            showLoadingIndicator('overview-section');
+            showLoadingIndicator('daily-section');
+            
+            updateLastUpdatedTime();
+
+            // Fetch both data sources in parallel
+            const [overviewCsv, dailyMetricsCsv] = await Promise.all([
+                fetchCSVData(OVERVIEW_URL),
+                fetchCSVData(DAILY_METRICS_URL)
+            ]);
+
+            const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
+            const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
+
+            renderOverviewDashboard(overviewData);
+            handleNavigation(overviewData, dailyMetricsData);
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
 </body>
 </html>
