@@ -309,22 +309,40 @@
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
         const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
 
+        /**
+         * Utility function to show a loading indicator.
+         * @param {string} containerId The ID of the container element.
+         */
         function showLoadingIndicator(containerId) {
             const container = document.getElementById(containerId);
-            container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
+            if (container) {
+                container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
+            }
         }
 
+        /**
+         * Utility function to show an error message.
+         * @param {string} containerId The ID of the container element.
+         * @param {string} message The error message to display.
+         */
         function showFailureMessage(containerId, message) {
             const container = document.getElementById(containerId);
-            container.innerHTML = `
-                <div class="error-message-box">
-                    <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
-                    <p class="text-lg">${message}</p>
-                    <p class="mt-4">Please check the console for more details.</p>
-                </div>
-            `;
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-message-box">
+                        <h3 class="text-2xl font-bold mb-4">Error Loading Data</h3>
+                        <p class="text-lg">${message}</p>
+                        <p class="mt-4">Please check the console for more details.</p>
+                    </div>
+                `;
+            }
         }
 
+        /**
+         * Fetches data from a given CSV URL with robust error handling.
+         * @param {string} url The URL of the CSV data.
+         * @returns {Promise<string|null>} The CSV text or null on failure.
+         */
         async function fetchCSVData(url) {
             console.log(`Attempting to fetch data from: ${url}`);
             try {
@@ -346,6 +364,11 @@
             }
         }
         
+        /**
+         * Parses a CSV string into an array of objects.
+         * @param {string} csv The CSV data as a string.
+         * @returns {Array<Object>} An array of objects representing the CSV data.
+         */
         function parseCSV(csv) {
             const lines = csv.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) {
@@ -624,31 +647,39 @@
                 minute: '2-digit',
                 second: '2-digit'
             });
-            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
+            const footer = document.getElementById('last-updated-footer');
+            if (footer) {
+                footer.textContent = `Last updated: ${formattedTime}`;
+            }
         }
 
         /**
          * Initializes the dashboard by fetching data and rendering the initial view.
          */
         async function initializeDashboard() {
+            // Display loading indicators
             showLoadingIndicator('overview-section');
             showLoadingIndicator('daily-section');
-            
             updateLastUpdatedTime();
 
-            // Fetch both data sources in parallel
+            // Fetch both data sources in parallel to improve performance
             const [overviewCsv, dailyMetricsCsv] = await Promise.all([
                 fetchCSVData(OVERVIEW_URL),
                 fetchCSVData(DAILY_METRICS_URL)
             ]);
 
+            // Parse the data if it was successfully fetched
             const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
             const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
 
+            // Render the initial dashboard view (Overview)
             renderOverviewDashboard(overviewData);
+            
+            // Set up navigation after all data is ready
             handleNavigation(overviewData, dailyMetricsData);
         }
 
+        // Start the application after the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>
