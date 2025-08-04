@@ -9,7 +9,6 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Import the Inter font for a modern look */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
         /* Define theme colors for a light, iOS-inspired Glass UI */
@@ -20,7 +19,6 @@
             --border-color: rgba(108, 30, 116, 0.2);
             --text-color: #374151;
             --heading-color: #1f2937;
-            --sidebar-width: 280px;
         }
 
         body {
@@ -32,17 +30,16 @@
             box-sizing: border-box;
             color: var(--text-color);
             min-height: 100vh;
-            /* Added margin-left to prevent content from going under the fixed sidebar */
-            margin-left: var(--sidebar-width);
         }
         
         .dashboard-container {
             display: flex;
             min-height: 100vh;
+            justify-content: center;
         }
 
         .sidebar {
-            width: var(--sidebar-width);
+            width: 280px;
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
@@ -51,13 +48,6 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 12px rgba(0,0,0,0.1);
-            
-            /* The key change: fixed positioning for static navigation */
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            z-index: 10;
         }
 
         .sidebar-logo {
@@ -74,7 +64,7 @@
             margin-bottom: 0.75rem;
             border-radius: 0.75rem;
             color: var(--text-color);
-            font-size: 1.4rem;
+            font-size: 1.4rem; /* Increased font size as requested */
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -96,7 +86,6 @@
             flex-grow: 1;
             padding: 3rem;
             overflow-y: auto;
-            width: 100%;
         }
         
         .top-level-box {
@@ -191,13 +180,6 @@
 
         /* Responsive styles for mobile */
         @media (max-width: 768px) {
-            body {
-                /* Remove left margin on mobile */
-                margin-left: 0;
-                /* Add padding to account for the fixed header */
-                padding-top: 8rem; /* Adjust based on the new header height */
-            }
-
             .dashboard-container {
                 flex-direction: column;
             }
@@ -209,11 +191,6 @@
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
                 padding: 1.5rem 1rem;
-                /* Adjust fixed positioning for the top bar on mobile */
-                position: fixed;
-                top: 0;
-                left: 0;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
             .sidebar-logo {
                 display: none;
