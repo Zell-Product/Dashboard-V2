@@ -188,8 +188,9 @@
         }
         
         .scorecard-container {
+            /* Updated grid for wider cards */
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Slightly wider min width for cards */
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2.5rem; /* Increased gap */
             margin-bottom: 3rem;
         }
@@ -284,8 +285,12 @@
             margin-top: 3.5rem;
             font-size: 0.9rem;
             color: #6b7280;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
         }
-
+        
         .hidden {
             display: none !important;
         }
@@ -372,7 +377,9 @@
                 </div>
             </div>
 
-            <div id="last-updated-footer" class="last-updated-text"></div>
+            <div id="last-updated-footer" class="last-updated-text">
+                <!-- Last updated text and refresh button will be rendered here by JS -->
+            </div>
         </main>
     </div>
 
@@ -383,7 +390,12 @@
         
         // This will store the Chart.js instance so we can destroy and re-create it
         let dailyChartInstance = null;
-        let overviewChartInstance = null;
+        
+        // Cache to store fetched data
+        const dataCache = {
+            overview: null,
+            daily: null
+        };
 
         /**
          * Displays a loading spinner in the specified container.
@@ -496,14 +508,15 @@
                 topLevelBoxEl.className = "top-level-box";
                 topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
                 
+                // Use a more flexible grid for sub-boxes
                 const subBoxesContainer = document.createElement('div');
-                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"; // Increased gap
+                subBoxesContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10";
 
                 // Iterate through each sub-box and its metrics
                 for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                     const subBoxEl = document.createElement('div');
                     subBoxEl.className = "sub-box";
-                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-4"></div>`; // Increased space
+                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-4"></div>`;
                     const metricsContainer = subBoxEl.querySelector('div.space-y-4');
                     
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
@@ -551,9 +564,9 @@
             const dailyUserChartData = data.filter(d => d['Cumulative'] === 'Total Users');
             if (dailyUserChartData.length > 0) {
                 const dates = dailyUserChartData.map(d => d['Date']);
-                const webData = dailyUserChartData.map(d => d['WEB']);
-                const androidData = dailyUserChartData.map(d => d['ANDROID']);
-                const iosData = dailyUserChartData.map(d => d['iOS']);
+                const webData = dailyUserChartData.map(d => parseInt(d['WEB'], 10));
+                const androidData = dailyUserChartData.map(d => parseInt(d['ANDROID'], 10));
+                const iosData = dailyUserChartData.map(d => parseInt(d['iOS'], 10));
                 
                 const chartBox = document.createElement('div');
                 chartBox.className = "sub-box mb-10"; // Increased bottom margin
@@ -633,7 +646,8 @@
             
             // Now render the individual daily metrics in sub-boxes
             const dailyMetricsContainer = document.createElement('div');
-            dailyMetricsContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"; // Increased gap
+            // Use a more flexible grid for metric cards
+            dailyMetricsContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10";
 
             // Group by metric name
             const groupedMetrics = data.reduce((acc, row) => {
@@ -678,32 +692,42 @@
         
         /**
          * Handles navigation between different sections of the dashboard.
-         * @param {Array<Object>} overviewData - The data for the overview section.
-         * @param {Array<Object>} dailyMetricsData - The data for the daily metrics section.
+         * The function now fetches data on-demand and uses a cache.
+         * @param {string} target - The ID of the target section to show.
          */
-        function handleNavigation(overviewData, dailyMetricsData) {
+        async function handleNavigation(target) {
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             const sections = document.querySelectorAll('.section-container');
-            navItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = item.dataset.target + '-section';
-                    navItems.forEach(nav => nav.classList.remove('active'));
-                    item.classList.add('active');
-                    sections.forEach(section => section.classList.add('hidden'));
-                    document.getElementById(targetId).classList.remove('hidden');
+            
+            navItems.forEach(nav => nav.classList.remove('active'));
+            const activeNavItem = document.querySelector(`.sidebar-nav-item[data-target="${target}"]`);
+            if (activeNavItem) activeNavItem.classList.add('active');
+            
+            sections.forEach(section => section.classList.add('hidden'));
+            const targetSection = document.getElementById(target + '-section');
+            if (targetSection) targetSection.classList.remove('hidden');
 
-                    if (item.dataset.target === 'overview') {
-                        renderOverviewDashboard(overviewData);
-                    } else if (item.dataset.target === 'daily') {
-                        renderDailyMetricsDashboard(dailyMetricsData);
-                    }
-                });
-            });
+            // Check cache before fetching
+            if (target === 'overview') {
+                if (!dataCache.overview) {
+                    showLoadingIndicator('overview-section');
+                    const csv = await fetchCSVData(OVERVIEW_URL);
+                    dataCache.overview = csv ? parseCSV(csv) : null;
+                }
+                renderOverviewDashboard(dataCache.overview);
+            } else if (target === 'daily') {
+                if (!dataCache.daily) {
+                    showLoadingIndicator('daily-section');
+                    const csv = await fetchCSVData(DAILY_METRICS_URL);
+                    dataCache.daily = csv ? parseCSV(csv) : null;
+                }
+                renderDailyMetricsDashboard(dataCache.daily);
+            }
+            updateLastUpdatedTime();
         }
         
         /**
-         * Updates the "Last updated" footer with the current time.
+         * Updates the "Last updated" footer with the current time and a refresh button.
          */
         function updateLastUpdatedTime() {
             const now = new Date();
@@ -715,28 +739,44 @@
                 minute: '2-digit',
                 second: '2-digit'
             });
-            document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
+            const footer = document.getElementById('last-updated-footer');
+            footer.innerHTML = `
+                Last updated: ${formattedTime}
+                <button id="refresh-button" class="ml-4 px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-md transition-colors duration-200">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            `;
+            document.getElementById('refresh-button').addEventListener('click', () => {
+                refreshData();
+            });
+        }
+        
+        /**
+         * Refreshes the data for the currently active tab.
+         */
+        function refreshData() {
+            // Clear the cache for the active tab to force a new fetch
+            const activeTab = document.querySelector('.sidebar-nav-item.active').dataset.target;
+            dataCache[activeTab] = null;
+            // Rerender the active tab, which will now fetch fresh data
+            handleNavigation(activeTab);
         }
 
         /**
          * Initializes the dashboard by fetching data and rendering the initial view.
          */
         async function initializeDashboard() {
-            showLoadingIndicator('overview-section');
-            showLoadingIndicator('daily-section');
-            
-            updateLastUpdatedTime();
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = item.dataset.target;
+                    handleNavigation(targetId);
+                });
+            });
 
-            const [overviewCsv, dailyMetricsCsv] = await Promise.all([
-                fetchCSVData(OVERVIEW_URL),
-                fetchCSVData(DAILY_METRICS_URL)
-            ]);
-
-            const overviewData = overviewCsv ? parseCSV(overviewCsv) : [];
-            const dailyMetricsData = dailyMetricsCsv ? parseCSV(dailyMetricsCsv) : [];
-
-            renderOverviewDashboard(overviewData);
-            handleNavigation(overviewData, dailyMetricsData);
+            // Initial render of the overview section
+            handleNavigation('overview');
         }
 
         document.addEventListener('DOMContentLoaded', initializeDashboard);
