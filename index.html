@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Dashboard</title>
-    <!-- Favicon link -->
+ <!-- Favicon link -->
     <link rel="icon" href="favicon.png" type="image/png">
     <!-- If you have an .ico file, you can also add: -->
     <!-- <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"> -->
@@ -18,28 +18,34 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
-        /* Define theme colors for a light, iOS-inspired Glass UI */
         :root {
             --primary-purple: #6c1e74;
             --light-background: #f0f4f9;
-            --card-background: rgba(255, 255, 255, 0.75);
-            --border-color: rgba(108, 30, 116, 0.2);
+            --card-background: rgba(255, 255, 255, 0.85);
+            --border-color: rgba(108, 30, 116, 0.15);
             --text-color: #374151;
             --heading-color: #1f2937;
             --sidebar-width: 280px;
         }
 
+        /* --- NEW: Vibrant, Animated Gradient Background --- */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--light-background);
-            background-image: linear-gradient(135deg, #f0f4f9 0%, #e8edf3 100%);
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             color: var(--text-color);
             min-height: 100vh;
-            /* Prevent body from scrolling on desktop */
             overflow: hidden;
+            background: linear-gradient(315deg, #e0c3fc, #f0f4f9, #d3e8ff, #fbc2eb);
+            background-size: 400% 400%;
+            animation: gradientAnimation 25s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .dashboard-container {
@@ -50,14 +56,14 @@
 
         .sidebar {
             width: var(--sidebar-width);
-            background-color: var(--card-background);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(25px);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
             padding: 2rem;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
@@ -117,69 +123,95 @@
         }
         
         .top-level-box {
-            margin-bottom: 3.5rem;
-            padding: 3rem;
-            background-color: var(--card-background);
-            backdrop-filter: blur(20px);
-            border-radius: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 1px solid var(--border-color);
+            padding: 0; /* Remove padding from outer box */
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
         }
         
+        /* --- NEW: Premium Glass Header --- */
         .top-level-box-title {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: var(--heading-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-purple);
             margin-bottom: 2.5rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 1.5rem;
+            padding: 1.25rem 2rem;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .header-logo {
+            height: 40px;
+            width: auto;
         }
 
         .sub-box {
             padding: 2.5rem;
-            background-color: rgba(108, 30, 116, 0.05);
-            backdrop-filter: blur(20px);
+            margin-bottom: 2.5rem; /* Logical spacing */
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(249,249,255,0.8));
+            backdrop-filter: blur(15px);
             border-radius: 1.5rem;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(108, 30, 116, 0.1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
         
+        /* --- NEW: Bigger, Bolder Sub-Headers --- */
         .sub-box-title {
-            font-size: 1.75rem;
-            font-weight: 600;
+            font-size: 1.75rem; /* Larger */
+            font-weight: 800; /* Bolder */
             color: var(--heading-color);
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
         }
         
-        .metric-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(108, 30, 116, 0.15);
-            transition: transform 0.2s ease-in-out;
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
         }
 
-        .metric-item:hover {
-            transform: translateX(8px);
+        .metric-card {
+            background: linear-gradient(145deg, #ffffff, #f9f9ff);
+            padding: 1.5rem;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(108, 30, 116, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            text-align: center;
+            transition: all 0.3s ease;
         }
-        
-        .metric-item:last-child {
-            border-bottom: none;
+
+        .metric-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(108, 30, 116, 0.15);
         }
-        
+
         .metric-label {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--text-color);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            display: block;
         }
         
         .metric-value {
-            font-size: 1.1rem;
-            font-weight: 700;
+            font-size: 2.25rem;
+            font-weight: 800;
             color: var(--primary-purple);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover .metric-value {
+            transform: scale(1.1);
         }
         
         .chart-container {
@@ -189,7 +221,6 @@
             position: relative;
         }
         
-        /* Updated styles for Report Buttons */
         .report-button {
             display: flex;
             flex-direction: column;
@@ -204,11 +235,13 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            background-color: var(--primary-purple); /* Unified purple color */
         }
 
         .report-button:hover {
             transform: translateY(-5px) scale(1.03);
             box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+            background-color: #5a1860; /* Darker purple on hover */
         }
 
         .report-button-content {
@@ -221,21 +254,6 @@
         .report-button-title {
             font-size: 1.25rem;
             font-weight: 600;
-        }
-
-        .google-sheet-icon {
-            position: absolute;
-            bottom: 12px;
-            right: 12px;
-            width: 24px;
-            height: 24px;
-            opacity: 0.8;
-        }
-
-        /* Specific text color for light backgrounds */
-        .report-button.text-dark .report-button-title,
-        .report-button.text-dark .fas {
-            color: #374151; /* --text-color */
         }
 
         .error-message-box {
@@ -284,7 +302,6 @@
             display: none !important;
         }
         
-        /* Responsive styles for mobile */
         @media (max-width: 768px) {
             body {
                 overflow-x: hidden;
@@ -316,11 +333,14 @@
                 height: auto;
             }
             .top-level-box-title {
-                text-align: center;
+                flex-direction: column;
                 font-size: 1.75rem;
             }
-            .sub-box-title {
-                text-align: center;
+            .header-logo {
+                margin-top: 1rem;
+            }
+            .metrics-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -348,46 +368,47 @@
 
         <main class="main-content">
             <div id="overview-section" class="section-container">
-                </div>
+            </div>
             
             <div id="daily-section" class="section-container hidden">
-                </div>
+            </div>
 
             <div id="other-reports-section" class="section-container hidden">
                 <div class="top-level-box">
-                    <h2 class="top-level-box-title">Other Reports</h2>
+                    <h2 class="top-level-box-title">
+                        <span>Other Reports</span>
+                        <!-- FINAL LOGO FIX: Referencing your GitHub image directly -->
+                        <img class="header-logo" src="https://raw.githubusercontent.com/YashShah20F/Dashboard-V3/main/sheets-logo.png" alt="Google Sheets Logo">
+                    </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
-                        <a href="https://docs.google.com/spreadsheets/d/195XkhREyrh329AtiWItixWUm-J019vf7NzKyCBQvIYw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button" style="background-color: #34A853;" onmouseover="this.style.backgroundColor='#2c8e45'" onmouseout="this.style.backgroundColor='#34A853'">
+                        <!-- Buttons now use CSS class for unified color, no inline styles -->
+                        <a href="https://docs.google.com/spreadsheets/d/195XkhREyrh329AtiWItixWUm-J019vf7NzKyCBQvIYw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button">
                             <div class="report-button-content">
                                 <i class="fas fa-book-open text-4xl"></i>
                                 <span class="report-button-title">Question Repository</span>
                             </div>
-                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
                         </a>
 
-                        <a href="https://docs.google.com/spreadsheets/d/1nvGEbgEfrVrW1zWGndsRjF2naOp24BRk0cCRlLBoing/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button" style="background-color: #4285F4;" onmouseover="this.style.backgroundColor='#3573d9'" onmouseout="this.style.backgroundColor='#4285F4'">
+                        <a href="https://docs.google.com/spreadsheets/d/1nvGEbgEfrVrW1zWGndsRjF2naOp24BRk0cCRlLBoing/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button">
                             <div class="report-button-content">
                                 <i class="fas fa-clipboard-check text-4xl"></i>
                                 <span class="report-button-title">Course Checks</span>
                             </div>
-                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
                         </a>
 
-                        <a href="https://docs.google.com/spreadsheets/d/101pxzW4-A1nuoazXwWi0XFx61iLc9QhcRA-8AbkW2UM/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button text-dark" style="background-color: #FBBC05;" onmouseover="this.style.backgroundColor='#e4a804'" onmouseout="this.style.backgroundColor='#FBBC05'">
+                        <a href="https://docs.google.com/spreadsheets/d/101pxzW4-A1nuoazXwWi0XFx61iLc9QhcRA-8AbkW2UM/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button">
                             <div class="report-button-content">
                                 <i class="fas fa-ticket-alt text-4xl"></i>
                                 <span class="report-button-title">Ask a Doubt + Tickets</span>
                             </div>
-                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
                         </a>
 
-                        <a href="https://docs.google.com/spreadsheets/d/1QjRDyvdsDLTqo2wVuv9nF125z7nxaN2htTh-3o5HQ8A/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button" style="background-color: #EA4335;" onmouseover="this.style.backgroundColor='#d93527'" onmouseout="this.style.backgroundColor='#EA4335'">
+                        <a href="https://docs.google.com/spreadsheets/d/1QjRDyvdsDLTqo2wVuv9nF125z7nxaN2htTh-3o5HQ8A/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button">
                             <div class="report-button-content">
                                 <i class="fas fa-chart-pie text-4xl"></i>
                                 <span class="report-button-title">Weekly Batch Reports</span>
                             </div>
-                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
                         </a>
                     </div>
                 </div>
@@ -490,32 +511,28 @@
             for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
                 const topLevelBoxEl = document.createElement('div');
                 topLevelBoxEl.className = "top-level-box";
-                topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
+                topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title"><span>${topLevelBox}</span></h2>`;
                 
-                const subBoxesContainer = document.createElement('div');
-                subBoxesContainer.className = "flex flex-col space-y-10"; 
-
                 for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                     const subBoxEl = document.createElement('div');
                     subBoxEl.className = "sub-box";
-                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-4"></div>`;
-                    const metricsContainer = subBoxEl.querySelector('div.space-y-4');
+                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3>`;
+                    
+                    const metricsGrid = document.createElement('div');
+                    metricsGrid.className = "metrics-grid";
                     
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
-                        const metricEl = document.createElement('div');
-                        metricEl.className = "metric-item";
-                        metricEl.innerHTML = `
-                            <span class="metric-label">
-                                <i class="fas fa-database text-purple-500"></i>
-                                ${metric['Data Header']}
-                            </span>
-                            <span class="metric-value">${metric['Value']}</span>
+                        const metricCard = document.createElement('div');
+                        metricCard.className = "metric-card";
+                        metricCard.innerHTML = `
+                            <div class="metric-label">${metric['Data Header']}</div>
+                            <div class="metric-value">${metric['Value']}</div>
                         `;
-                        metricsContainer.appendChild(metricEl);
+                        metricsGrid.appendChild(metricCard);
                     });
-                    subBoxesContainer.appendChild(subBoxEl);
+                    subBoxEl.appendChild(metricsGrid);
+                    topLevelBoxEl.appendChild(subBoxEl);
                 }
-                topLevelBoxEl.appendChild(subBoxesContainer);
                 container.appendChild(topLevelBoxEl);
             }
         }
@@ -531,7 +548,7 @@
 
             const topLevelBoxEl = document.createElement('div');
             topLevelBoxEl.className = "top-level-box";
-            topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">Daily Metrics</h2>`;
+            topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title"><span>Daily Metrics</span></h2>`;
             container.appendChild(topLevelBoxEl);
             
             const dailyUserChartData = data.filter(d => d['Cumulative'] === 'Total Users');
@@ -575,9 +592,6 @@
                 });
             }
             
-            const dailyMetricsContainer = document.createElement('div');
-            dailyMetricsContainer.className = "flex flex-col space-y-10";
-
             const groupedMetrics = data.reduce((acc, row) => {
                 const metricName = row['Cumulative'];
                 if (metricName && metricName !== 'Total Users' && metricName.trim() !== '') {
@@ -590,27 +604,26 @@
             for (const [metricName, entries] of Object.entries(groupedMetrics)) {
                 const subBoxEl = document.createElement('div');
                 subBoxEl.className = "sub-box";
-                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3><div class="space-y-4"></div>`;
-                const metricsContainer = subBoxEl.querySelector('div.space-y-4');
+                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3>`;
                 
-                entries.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
-
-                const latestEntry = entries[0];
+                const metricsGrid = document.createElement('div');
+                metricsGrid.className = "metrics-grid";
+                
+                const latestEntry = entries.sort((a, b) => new Date(b['Date']) - new Date(a['Date']))[0];
                 ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
                     if (latestEntry[platform] && latestEntry[platform] !== 'NA' && latestEntry[platform].trim() !== '') {
-                        const metricEl = document.createElement('div');
-                        metricEl.className = "metric-item";
-                        metricEl.innerHTML = `
-                            <span class="metric-label"><i class="fas fa-chart-bar text-purple-500"></i> ${platform}</span>
-                            <span class="metric-value">${latestEntry[platform]}</span>
+                        const metricCard = document.createElement('div');
+                        metricCard.className = "metric-card";
+                        metricCard.innerHTML = `
+                            <div class="metric-label">${platform}</div>
+                            <div class="metric-value">${latestEntry[platform]}</div>
                         `;
-                        metricsContainer.appendChild(metricEl);
+                        metricsGrid.appendChild(metricCard);
                     }
                 });
-                dailyMetricsContainer.appendChild(subBoxEl);
+                subBoxEl.appendChild(metricsGrid);
+                topLevelBoxEl.appendChild(subBoxEl);
             }
-
-            topLevelBoxEl.appendChild(dailyMetricsContainer);
         }
         
         async function handleNavigation(target) {
@@ -645,10 +658,10 @@
         
         function updateLastUpdatedTime() {
             const now = new Date();
-            const formattedTime = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const formattedTime = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const footer = document.getElementById('last-updated-footer');
             footer.innerHTML = `
-                Last updated: ${formattedTime}
+                Last updated: ${formattedTime} (IST)
                 <button id="refresh-button" class="ml-4 px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-md transition-colors duration-200">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
