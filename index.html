@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Dashboard</title>
+    <!-- Favicon link -->
+    <link rel="icon" href="favicon.png" type="image/png">
+    <!-- If you have an .ico file, you can also add: -->
+    <!-- <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"> -->
 
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Tailwind CSS CDN for a responsive and utility-first framework -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Custom CSS for a refined, iOS-inspired Glass UI -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
@@ -45,7 +45,6 @@
         .dashboard-container {
             display: flex;
             min-height: 100vh;
-            /* Flex-grow allows main-content to take up the remaining space */
             flex-grow: 1;
         }
 
@@ -77,12 +76,12 @@
         .sidebar-nav-item {
             display: flex;
             align-items: center;
-            gap: 1.25rem; /* Increased gap for better spacing */
-            padding: 1.25rem 1.5rem; /* Increased padding */
+            gap: 1.25rem;
+            padding: 1.25rem 1.5rem;
             margin-bottom: 0.75rem;
-            border-radius: 1.5rem; /* More rounded corners */
+            border-radius: 1.5rem;
             color: var(--text-color);
-            font-size: 1.1rem; /* Adjusted font size for better visual balance */
+            font-size: 1.1rem;
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -112,41 +111,41 @@
         .main-content {
             margin-left: var(--sidebar-width);
             flex-grow: 1;
-            padding: 2.5rem 4rem; /* Increased padding for more space */
+            padding: 2.5rem 4rem;
             overflow-y: auto;
             height: 100vh;
         }
         
         .top-level-box {
-            margin-bottom: 3.5rem; /* Increased bottom margin for better separation */
+            margin-bottom: 3.5rem;
             padding: 3rem;
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
-            border-radius: 2rem; /* More rounded corners for the main boxes */
+            border-radius: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: 1px solid var(--border-color);
         }
         
         .top-level-box-title {
-            font-size: 2.25rem; /* Slightly larger title */
+            font-size: 2.25rem;
             font-weight: 700;
             color: var(--heading-color);
-            margin-bottom: 2.5rem; /* Increased margin */
+            margin-bottom: 2.5rem;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 1.5rem;
         }
 
         .sub-box {
-            padding: 2.5rem; /* Increased padding */
+            padding: 2.5rem;
             background-color: rgba(108, 30, 116, 0.05);
             backdrop-filter: blur(20px);
-            border-radius: 1.5rem; /* Slightly more rounded corners */
+            border-radius: 1.5rem;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(108, 30, 116, 0.1);
         }
         
         .sub-box-title {
-            font-size: 1.75rem; /* Larger sub-box title */
+            font-size: 1.75rem;
             font-weight: 600;
             color: var(--heading-color);
             margin-bottom: 1.5rem;
@@ -156,13 +155,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 0; /* Increased vertical padding for more spacing */
+            padding: 1rem 0;
             border-bottom: 1px solid rgba(108, 30, 116, 0.15);
             transition: transform 0.2s ease-in-out;
         }
 
         .metric-item:hover {
-            transform: translateX(8px); /* More pronounced hover effect */
+            transform: translateX(8px);
         }
         
         .metric-item:last-child {
@@ -174,7 +173,7 @@
             color: var(--text-color);
             display: flex;
             align-items: center;
-            gap: 1rem; /* Increased gap between icon and label */
+            gap: 1rem;
         }
         
         .metric-value {
@@ -183,73 +182,67 @@
             color: var(--primary-purple);
         }
         
-        /* Updated scorecard container for a single column, full-width layout */
-        .scorecard-container {
-            display: flex;
-            flex-direction: column;
-            gap: 2.5rem; /* Increased gap */
-            margin-bottom: 3rem;
-        }
-        
-        .scorecard {
-            background-color: var(--card-background);
-            backdrop-filter: blur(20px);
-            border-radius: 1.5rem;
-            padding: 2.5rem; /* Increased padding */
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .scorecard:hover {
-            transform: translateY(-8px); /* More pronounced hover effect */
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-        }
-        
-        .scorecard-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--heading-color);
-        }
-        
-        .scorecard-value {
-            font-size: 3.5rem; /* Larger value for emphasis */
-            font-weight: 800;
-            color: var(--primary-purple);
-            margin: 1.25rem 0;
-        }
-        
-        .scorecard-trend {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem; /* Slightly larger gap */
-            font-size: 1.1rem; /* Slightly larger font size */
-            font-weight: 600;
-        }
-
-        .trend-positive {
-            color: #28a745;
-        }
-        
-        .trend-negative {
-            color: #dc3545;
-        }
-
         .chart-container {
             width: 100%;
-            height: 450px; /* Slightly taller chart container */
+            height: 450px;
             margin-top: 2rem;
             position: relative;
         }
         
+        /* Updated styles for Report Buttons */
+        .report-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-button:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .report-button-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .report-button-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .google-sheet-icon {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            opacity: 0.8;
+        }
+
+        /* Specific text color for light backgrounds */
+        .report-button.text-dark .report-button-title,
+        .report-button.text-dark .fas {
+            color: #374151; /* --text-color */
+        }
+
         .error-message-box {
             text-align: center;
             color: #d32f2f;
             background-color: #ffebee;
-            padding: 2.5rem; /* Increased padding */
+            padding: 2.5rem;
             border-radius: 1.25rem;
             margin-top: 2rem;
             border: 1px solid #d32f2f;
@@ -309,14 +302,13 @@
                 border-bottom: 1px solid var(--border-color);
                 padding: 1rem 0.5rem;
                 position: static;
-                height: auto;
             }
             .sidebar-logo {
                 display: none;
             }
             .sidebar-nav-item {
                 padding: 0.75rem 1rem;
-                font-size: 1rem; /* Adjusted font size for mobile */
+                font-size: 1rem;
             }
             .main-content {
                 padding: 1.5rem;
@@ -336,7 +328,6 @@
 <body>
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-logo">Dashboard</div>
             <nav>
@@ -348,66 +339,82 @@
                     <i class="fas fa-calendar-day nav-icon"></i>
                     <span>Daily Metrics</span>
                 </a>
-                <a href="#" class="sidebar-nav-item" data-target="settings">
-                    <i class="fas fa-cog nav-icon"></i>
-                    <span>Settings</span>
+                <a href="#" class="sidebar-nav-item" data-target="other-reports">
+                    <i class="fas fa-file-alt nav-icon"></i>
+                    <span>Other Reports</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Section containers -->
             <div id="overview-section" class="section-container">
-                <!-- Overview metrics will be rendered here -->
-            </div>
+                </div>
             
             <div id="daily-section" class="section-container hidden">
-                <!-- Daily metrics will be rendered here -->
-            </div>
+                </div>
 
-            <div id="settings-section" class="section-container hidden">
+            <div id="other-reports-section" class="section-container hidden">
                 <div class="top-level-box">
-                    <h2 class="top-level-box-title">Settings</h2>
-                    <p class="text-gray-600">This section is a placeholder for user settings.</p>
+                    <h2 class="top-level-box-title">Other Reports</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                        <a href="https://docs.google.com/spreadsheets/d/195XkhREyrh329AtiWItixWUm-J019vf7NzKyCBQvIYw/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button" style="background-color: #34A853;" onmouseover="this.style.backgroundColor='#2c8e45'" onmouseout="this.style.backgroundColor='#34A853'">
+                            <div class="report-button-content">
+                                <i class="fas fa-book-open text-4xl"></i>
+                                <span class="report-button-title">Question Repository</span>
+                            </div>
+                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
+                        </a>
+
+                        <a href="https://docs.google.com/spreadsheets/d/1nvGEbgEfrVrW1zWGndsRjF2naOp24BRk0cCRlLBoing/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button" style="background-color: #4285F4;" onmouseover="this.style.backgroundColor='#3573d9'" onmouseout="this.style.backgroundColor='#4285F4'">
+                            <div class="report-button-content">
+                                <i class="fas fa-clipboard-check text-4xl"></i>
+                                <span class="report-button-title">Course Checks</span>
+                            </div>
+                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
+                        </a>
+
+                        <a href="https://docs.google.com/spreadsheets/d/101pxzW4-A1nuoazXwWi0XFx61iLc9QhcRA-8AbkW2UM/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button text-dark" style="background-color: #FBBC05;" onmouseover="this.style.backgroundColor='#e4a804'" onmouseout="this.style.backgroundColor='#FBBC05'">
+                            <div class="report-button-content">
+                                <i class="fas fa-ticket-alt text-4xl"></i>
+                                <span class="report-button-title">Ask a Doubt + Tickets</span>
+                            </div>
+                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
+                        </a>
+
+                        <a href="https://docs.google.com/spreadsheets/d/1QjRDyvdsDLTqo2wVuv9nF125z7nxaN2htTh-3o5HQ8A/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="report-button" style="background-color: #EA4335;" onmouseover="this.style.backgroundColor='#d93527'" onmouseout="this.style.backgroundColor='#EA4335'">
+                            <div class="report-button-content">
+                                <i class="fas fa-chart-pie text-4xl"></i>
+                                <span class="report-button-title">Weekly Batch Reports</span>
+                            </div>
+                            <img src="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_4.png" alt="Google Sheets" class="google-sheet-icon">
+                        </a>
+                    </div>
                 </div>
             </div>
 
             <div id="last-updated-footer" class="last-updated-text">
-                <!-- Last updated text and refresh button will be rendered here by JS -->
-            </div>
+                </div>
         </main>
     </div>
 
-    <!-- JavaScript for dynamic data fetching, parsing, and rendering -->
     <script>
         // Data URLs from Google Sheets
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
         const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
         
-        // This will store the Chart.js instance so we can destroy and re-create it
         let dailyChartInstance = null;
         
-        // Cache to store fetched data to avoid redundant API calls
         const dataCache = {
             overview: null,
             daily: null
         };
 
-        /**
-         * Displays a loading spinner in the specified container.
-         * @param {string} containerId - The ID of the container element.
-         */
         function showLoadingIndicator(containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
         }
 
-        /**
-         * Displays a failure message in the specified container.
-         * @param {string} containerId - The ID of the container element.
-         * @param {string} message - The error message to display.
-         */
         function showFailureMessage(containerId, message) {
             const container = document.getElementById(containerId);
             container.innerHTML = `
@@ -419,12 +426,6 @@
             `;
         }
         
-        /**
-         * Parses CSV data into an array of objects.
-         * It handles quoted strings containing commas.
-         * @param {string} csv - The raw CSV string.
-         * @returns {Array<Object>} An array of objects representing the CSV rows.
-         */
         function parseCSV(csv) {
             const lines = csv.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) {
@@ -436,7 +437,6 @@
 
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
-                // Regex to handle commas inside quoted strings
                 const values = line.match(/(?:"[^"]*"|[^,])+/g) || line.split(',');
                 if (values) {
                     const trimmedValues = values.map(value => value.trim().replace(/"/g, ''));
@@ -452,23 +452,14 @@
             return data;
         }
 
-        /**
-         * Fetches CSV data from a given URL.
-         * @param {string} url - The URL of the CSV file.
-         * @returns {Promise<string|null>} The CSV text on success, or null on failure.
-         */
         async function fetchCSVData(url) {
-            console.log(`Attempting to fetch data from: ${url}`);
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                    console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const text = await response.text();
-                console.log(`Successfully fetched data from ${url}`);
                 if (text.includes("Sorry, the file you have requested does not exist.") || text.includes("404 Not Found")) {
-                    console.error("The Google Sheets URL is invalid or the file does not exist.");
                     return null;
                 }
                 return text;
@@ -478,20 +469,15 @@
             }
         }
         
-        /**
-         * Renders the overview dashboard using parsed CSV data.
-         * @param {Array<Object>} data - The parsed data from the overview CSV.
-         */
         function renderOverviewDashboard(data) {
             const container = document.getElementById('overview-section');
-            container.innerHTML = ''; // Clear previous content
+            container.innerHTML = '';
             
             if (!data || data.length === 0) {
                 showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the data source.');
                 return;
             }
             
-            // Group the data by "Top-Level Box" and "Sub-Box Header"
             const groupedData = data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
@@ -501,17 +487,14 @@
                 return acc;
             }, {});
 
-            // Iterate through each top-level box and render it
             for (const [topLevelBox, subBoxes] of Object.entries(groupedData)) {
                 const topLevelBoxEl = document.createElement('div');
                 topLevelBoxEl.className = "top-level-box";
                 topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
                 
-                // Change: Use a single-column flex layout for the sub-boxes to make them full-width
                 const subBoxesContainer = document.createElement('div');
-                subBoxesContainer.className = "flex flex-col space-y-10"; // Changed from grid layout
+                subBoxesContainer.className = "flex flex-col space-y-10"; 
 
-                // Iterate through each sub-box and its metrics
                 for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                     const subBoxEl = document.createElement('div');
                     subBoxEl.className = "sub-box";
@@ -521,7 +504,6 @@
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
                         const metricEl = document.createElement('div');
                         metricEl.className = "metric-item";
-                        // Using a simple icon for the metric items
                         metricEl.innerHTML = `
                             <span class="metric-label">
                                 <i class="fas fa-database text-purple-500"></i>
@@ -538,10 +520,6 @@
             }
         }
         
-        /**
-         * Renders the daily metrics dashboard using parsed CSV data.
-         * @param {Array<Object>} data - The parsed data from the daily metrics CSV.
-         */
         function renderDailyMetricsDashboard(data) {
             const container = document.getElementById('daily-section');
             container.innerHTML = '';
@@ -551,13 +529,11 @@
                 return;
             }
 
-            // Create a top-level box for the entire section
             const topLevelBoxEl = document.createElement('div');
             topLevelBoxEl.className = "top-level-box";
             topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">Daily Metrics</h2>`;
             container.appendChild(topLevelBoxEl);
             
-            // Generate a line chart for the daily data
             const dailyUserChartData = data.filter(d => d['Cumulative'] === 'Total Users');
             if (dailyUserChartData.length > 0) {
                 const dates = dailyUserChartData.map(d => d['Date']);
@@ -566,7 +542,7 @@
                 const iosData = dailyUserChartData.map(d => parseInt(d['iOS'], 10));
                 
                 const chartBox = document.createElement('div');
-                chartBox.className = "sub-box mb-10"; // Increased bottom margin
+                chartBox.className = "sub-box mb-10"; 
                 chartBox.innerHTML = `
                     <h3 class="sub-box-title">Daily User Trend</h3>
                     <div class="chart-container">
@@ -575,78 +551,33 @@
                 `;
                 topLevelBoxEl.appendChild(chartBox);
                 
-                // Destroy previous chart instance if it exists to avoid memory leaks
                 if (dailyChartInstance) {
                     dailyChartInstance.destroy();
                 }
                 
-                // Create a new Chart.js instance for the daily user trend
                 const ctx = document.getElementById('dailyUserChart').getContext('2d');
                 dailyChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: dates,
                         datasets: [
-                            {
-                                label: 'Web Users',
-                                data: webData,
-                                borderColor: 'rgba(108, 30, 116, 1)',
-                                backgroundColor: 'rgba(108, 30, 116, 0.2)',
-                                tension: 0.4,
-                                fill: true,
-                            },
-                            {
-                                label: 'Android Users',
-                                data: androidData,
-                                borderColor: 'rgba(25, 126, 203, 1)',
-                                backgroundColor: 'rgba(25, 126, 203, 0.2)',
-                                tension: 0.4,
-                                fill: true,
-                            },
-                            {
-                                label: 'iOS Users',
-                                data: iosData,
-                                borderColor: 'rgba(235, 100, 100, 1)',
-                                backgroundColor: 'rgba(235, 100, 100, 0.2)',
-                                tension: 0.4,
-                                fill: true,
-                            }
+                            { label: 'Web Users', data: webData, borderColor: 'rgba(108, 30, 116, 1)', backgroundColor: 'rgba(108, 30, 116, 0.2)', tension: 0.4, fill: true, },
+                            { label: 'Android Users', data: androidData, borderColor: 'rgba(25, 126, 203, 1)', backgroundColor: 'rgba(25, 126, 203, 0.2)', tension: 0.4, fill: true, },
+                            { label: 'iOS Users', data: iosData, borderColor: 'rgba(235, 100, 100, 1)', backgroundColor: 'rgba(235, 100, 100, 0.2)', tension: 0.4, fill: true, }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                            },
-                            title: {
-                                display: false,
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                            },
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(108, 30, 116, 0.1)'
-                                },
-                            }
-                        }
+                        plugins: { legend: { display: true, }, title: { display: false, } },
+                        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: 'rgba(108, 30, 116, 0.1)' } } }
                     }
                 });
             }
             
-            // Now render the individual daily metrics in sub-boxes
             const dailyMetricsContainer = document.createElement('div');
-            // Change: Use a single-column flex layout for the daily metric cards
-            dailyMetricsContainer.className = "flex flex-col space-y-10"; // Changed from grid layout
+            dailyMetricsContainer.className = "flex flex-col space-y-10";
 
-            // Group by metric name
             const groupedMetrics = data.reduce((acc, row) => {
                 const metricName = row['Cumulative'];
                 if (metricName && metricName !== 'Total Users' && metricName.trim() !== '') {
@@ -662,20 +593,15 @@
                 subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3><div class="space-y-4"></div>`;
                 const metricsContainer = subBoxEl.querySelector('div.space-y-4');
                 
-                // Sort to show the latest date first
                 entries.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
 
-                // Take the most recent entry for each platform for a snapshot view
                 const latestEntry = entries[0];
                 ['WEB', 'ANDROID', 'iOS'].forEach(platform => {
                     if (latestEntry[platform] && latestEntry[platform] !== 'NA' && latestEntry[platform].trim() !== '') {
                         const metricEl = document.createElement('div');
                         metricEl.className = "metric-item";
                         metricEl.innerHTML = `
-                            <span class="metric-label">
-                                <i class="fas fa-chart-bar text-purple-500"></i>
-                                ${platform}
-                            </span>
+                            <span class="metric-label"><i class="fas fa-chart-bar text-purple-500"></i> ${platform}</span>
                             <span class="metric-value">${latestEntry[platform]}</span>
                         `;
                         metricsContainer.appendChild(metricEl);
@@ -687,26 +613,18 @@
             topLevelBoxEl.appendChild(dailyMetricsContainer);
         }
         
-        /**
-         * Handles navigation between different sections of the dashboard.
-         * The function now fetches data on-demand and uses a cache.
-         * @param {string} target - The ID of the target section to show.
-         */
         async function handleNavigation(target) {
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             const sections = document.querySelectorAll('.section-container');
             
-            // Update active state of navigation items
             navItems.forEach(nav => nav.classList.remove('active'));
             const activeNavItem = document.querySelector(`.sidebar-nav-item[data-target="${target}"]`);
             if (activeNavItem) activeNavItem.classList.add('active');
             
-            // Hide all sections and show the target section
             sections.forEach(section => section.classList.add('hidden'));
             const targetSection = document.getElementById(target + '-section');
             if (targetSection) targetSection.classList.remove('hidden');
 
-            // Check cache before fetching and render the appropriate dashboard
             if (target === 'overview') {
                 if (!dataCache.overview) {
                     showLoadingIndicator('overview-section');
@@ -722,23 +640,12 @@
                 }
                 renderDailyMetricsDashboard(dataCache.daily);
             }
-            // The settings section is static, so no data fetching is needed.
             updateLastUpdatedTime();
         }
         
-        /**
-         * Updates the "Last updated" footer with the current time and a refresh button.
-         */
         function updateLastUpdatedTime() {
             const now = new Date();
-            const formattedTime = now.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
+            const formattedTime = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const footer = document.getElementById('last-updated-footer');
             footer.innerHTML = `
                 Last updated: ${formattedTime}
@@ -751,22 +658,15 @@
             });
         }
         
-        /**
-         * Refreshes the data for the currently active tab by clearing the cache.
-         */
         function refreshData() {
-            // Clear the cache for the active tab to force a new fetch
             const activeTab = document.querySelector('.sidebar-nav-item.active').dataset.target;
-            dataCache[activeTab] = null;
-            // Rerender the active tab, which will now fetch fresh data
+            if (dataCache.hasOwnProperty(activeTab)) {
+                dataCache[activeTab] = null;
+            }
             handleNavigation(activeTab);
         }
 
-        /**
-         * Initializes the dashboard by fetching data and rendering the initial view.
-         */
         async function initializeDashboard() {
-            // Add event listeners to all navigation items
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
@@ -776,11 +676,9 @@
                 });
             });
 
-            // Initial render of the overview section
             handleNavigation('overview');
         }
 
-        // Start the application after the DOM content is fully loaded
         document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>
