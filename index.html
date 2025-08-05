@@ -5,20 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Dashboard</title>
 
-    <!-- Favicon link -->
-    <link rel="icon" href="favicon.png" type="image/png">
-    <!-- If you have an .ico file, you can also add: -->
-    <!-- <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"> -->
-    
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN for a responsive and utility-first framework -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Font Awesome CDN for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Chart.js CDN for graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <!-- Custom CSS for a refined, iOS-inspired Glass UI -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
@@ -50,7 +40,7 @@
             display: flex;
             min-height: 100vh;
             /* Flex-grow allows main-content to take up the remaining space */
-            flex-grow: 1; 
+            flex-grow: 1;
         }
 
         .sidebar {
@@ -84,7 +74,7 @@
             gap: 1.25rem; /* Increased gap for better spacing */
             padding: 1.25rem 1.5rem; /* Increased padding */
             margin-bottom: 0.75rem;
-            border-radius: 1rem; /* Slightly more rounded corners */
+            border-radius: 1.5rem; /* More rounded corners */
             color: var(--text-color);
             font-size: 1.1rem; /* Adjusted font size for better visual balance */
             font-weight: 500;
@@ -126,7 +116,7 @@
             padding: 3rem;
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
-            border-radius: 1.75rem; /* Slightly more rounded corners */
+            border-radius: 2rem; /* More rounded corners for the main boxes */
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: 1px solid var(--border-color);
         }
@@ -134,7 +124,7 @@
         .top-level-box-title {
             font-size: 2.25rem; /* Slightly larger title */
             font-weight: 700;
-            color: var(--primary-purple);
+            color: var(--heading-color);
             margin-bottom: 2.5rem; /* Increased margin */
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 1.5rem;
@@ -383,6 +373,7 @@
         </main>
     </div>
 
+    <!-- JavaScript for dynamic data fetching, parsing, and rendering -->
     <script>
         // Data URLs from Google Sheets
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
@@ -391,7 +382,7 @@
         // This will store the Chart.js instance so we can destroy and re-create it
         let dailyChartInstance = null;
         
-        // Cache to store fetched data
+        // Cache to store fetched data to avoid redundant API calls
         const dataCache = {
             overview: null,
             daily: null
@@ -424,6 +415,7 @@
         
         /**
          * Parses CSV data into an array of objects.
+         * It handles quoted strings containing commas.
          * @param {string} csv - The raw CSV string.
          * @returns {Array<Object>} An array of objects representing the CSV rows.
          */
@@ -489,10 +481,11 @@
             container.innerHTML = ''; // Clear previous content
             
             if (!data || data.length === 0) {
-                showFailureMessage('overview-section', 'Failed to load Overview Metrics data.');
+                showFailureMessage('overview-section', 'Failed to load Overview Metrics data. Please check the data source.');
                 return;
             }
             
+            // Group the data by "Top-Level Box" and "Sub-Box Header"
             const groupedData = data.reduce((acc, row) => {
                 const topLevelBox = row['Top-Level Box'];
                 const subBoxHeader = row['Sub-Box Header'];
@@ -548,16 +541,14 @@
             container.innerHTML = '';
             
             if (!data || data.length === 0) {
-                showFailureMessage('daily-section', 'Failed to load Daily Metrics data.');
+                showFailureMessage('daily-section', 'Failed to load Daily Metrics data. Please check the data source.');
                 return;
             }
 
             // Create a top-level box for the entire section
             const topLevelBoxEl = document.createElement('div');
             topLevelBoxEl.className = "top-level-box";
-            topLevelBoxEl.innerHTML = `
-                <h2 class="top-level-box-title">Daily Metrics</h2>
-            `;
+            topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">Daily Metrics</h2>`;
             container.appendChild(topLevelBoxEl);
             
             // Generate a line chart for the daily data
@@ -578,12 +569,12 @@
                 `;
                 topLevelBoxEl.appendChild(chartBox);
                 
-                // Destroy previous chart instance if it exists
+                // Destroy previous chart instance if it exists to avoid memory leaks
                 if (dailyChartInstance) {
                     dailyChartInstance.destroy();
                 }
                 
-                // Create a new chart
+                // Create a new Chart.js instance for the daily user trend
                 const ctx = document.getElementById('dailyUserChart').getContext('2d');
                 dailyChartInstance = new Chart(ctx, {
                     type: 'line',
@@ -699,15 +690,17 @@
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             const sections = document.querySelectorAll('.section-container');
             
+            // Update active state of navigation items
             navItems.forEach(nav => nav.classList.remove('active'));
             const activeNavItem = document.querySelector(`.sidebar-nav-item[data-target="${target}"]`);
             if (activeNavItem) activeNavItem.classList.add('active');
             
+            // Hide all sections and show the target section
             sections.forEach(section => section.classList.add('hidden'));
             const targetSection = document.getElementById(target + '-section');
             if (targetSection) targetSection.classList.remove('hidden');
 
-            // Check cache before fetching
+            // Check cache before fetching and render the appropriate dashboard
             if (target === 'overview') {
                 if (!dataCache.overview) {
                     showLoadingIndicator('overview-section');
@@ -723,6 +716,7 @@
                 }
                 renderDailyMetricsDashboard(dataCache.daily);
             }
+            // The settings section is static, so no data fetching is needed.
             updateLastUpdatedTime();
         }
         
@@ -752,7 +746,7 @@
         }
         
         /**
-         * Refreshes the data for the currently active tab.
+         * Refreshes the data for the currently active tab by clearing the cache.
          */
         function refreshData() {
             // Clear the cache for the active tab to force a new fetch
@@ -766,6 +760,7 @@
          * Initializes the dashboard by fetching data and rendering the initial view.
          */
         async function initializeDashboard() {
+            // Add event listeners to all navigation items
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
@@ -779,6 +774,7 @@
             handleNavigation('overview');
         }
 
+        // Start the application after the DOM content is fully loaded
         document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>
