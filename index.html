@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Dashboard</title>
 
-      <!-- Favicon link -->
+    <!-- Favicon link -->
     <link rel="icon" href="favicon.png" type="image/png">
     <!-- If you have an .ico file, you can also add: -->
     <!-- <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"> -->
@@ -43,12 +43,14 @@
             color: var(--text-color);
             min-height: 100vh;
             /* Prevent body from scrolling on desktop */
-            overflow: hidden; 
+            overflow: hidden;
         }
 
         .dashboard-container {
             display: flex;
             min-height: 100vh;
+            /* Flex-grow allows main-content to take up the remaining space */
+            flex-grow: 1; 
         }
 
         .sidebar {
@@ -79,12 +81,12 @@
         .sidebar-nav-item {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
+            gap: 1.25rem; /* Increased gap for better spacing */
+            padding: 1.25rem 1.5rem; /* Increased padding */
             margin-bottom: 0.75rem;
-            border-radius: 0.75rem;
+            border-radius: 1rem; /* Slightly more rounded corners */
             color: var(--text-color);
-            font-size: 1.4rem;
+            font-size: 1.1rem; /* Adjusted font size for better visual balance */
             font-weight: 500;
             transition: all 0.2s ease-in-out;
             cursor: pointer;
@@ -114,41 +116,41 @@
         .main-content {
             margin-left: var(--sidebar-width);
             flex-grow: 1;
-            padding: 3rem;
+            padding: 2.5rem 4rem; /* Increased padding for more space */
             overflow-y: auto;
             height: 100vh;
         }
         
         .top-level-box {
-            margin-bottom: 3rem;
+            margin-bottom: 3.5rem; /* Increased bottom margin for better separation */
             padding: 3rem;
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
-            border-radius: 1.5rem;
+            border-radius: 1.75rem; /* Slightly more rounded corners */
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border: 1px solid var(--border-color);
         }
         
         .top-level-box-title {
-            font-size: 2rem;
+            font-size: 2.25rem; /* Slightly larger title */
             font-weight: 700;
             color: var(--primary-purple);
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem; /* Increased margin */
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 1.5rem;
         }
 
         .sub-box {
-            padding: 2rem;
+            padding: 2.5rem; /* Increased padding */
             background-color: rgba(108, 30, 116, 0.05);
             backdrop-filter: blur(20px);
-            border-radius: 1.25rem;
+            border-radius: 1.5rem; /* Slightly more rounded corners */
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(108, 30, 116, 0.1);
         }
         
         .sub-box-title {
-            font-size: 1.5rem;
+            font-size: 1.75rem; /* Larger sub-box title */
             font-weight: 600;
             color: var(--heading-color);
             margin-bottom: 1.5rem;
@@ -158,13 +160,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0;
+            padding: 1rem 0; /* Increased vertical padding for more spacing */
             border-bottom: 1px solid rgba(108, 30, 116, 0.15);
             transition: transform 0.2s ease-in-out;
         }
 
         .metric-item:hover {
-            transform: translateX(5px);
+            transform: translateX(8px); /* More pronounced hover effect */
         }
         
         .metric-item:last-child {
@@ -176,7 +178,7 @@
             color: var(--text-color);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem; /* Increased gap between icon and label */
         }
         
         .metric-value {
@@ -187,8 +189,8 @@
         
         .scorecard-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Slightly wider min width for cards */
+            gap: 2.5rem; /* Increased gap */
             margin-bottom: 3rem;
         }
         
@@ -196,7 +198,7 @@
             background-color: var(--card-background);
             backdrop-filter: blur(20px);
             border-radius: 1.5rem;
-            padding: 2rem;
+            padding: 2.5rem; /* Increased padding */
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             display: flex;
@@ -206,7 +208,7 @@
         }
 
         .scorecard:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px); /* More pronounced hover effect */
             box-shadow: 0 15px 40px rgba(0,0,0,0.15);
         }
         
@@ -217,17 +219,17 @@
         }
         
         .scorecard-value {
-            font-size: 3rem;
+            font-size: 3.5rem; /* Larger value for emphasis */
             font-weight: 800;
             color: var(--primary-purple);
-            margin: 1rem 0;
+            margin: 1.25rem 0;
         }
         
         .scorecard-trend {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
+            gap: 0.75rem; /* Slightly larger gap */
+            font-size: 1.1rem; /* Slightly larger font size */
             font-weight: 600;
         }
 
@@ -241,7 +243,7 @@
 
         .chart-container {
             width: 100%;
-            height: 400px;
+            height: 450px; /* Slightly taller chart container */
             margin-top: 2rem;
             position: relative;
         }
@@ -250,8 +252,8 @@
             text-align: center;
             color: #d32f2f;
             background-color: #ffebee;
-            padding: 2rem;
-            border-radius: 1rem;
+            padding: 2.5rem; /* Increased padding */
+            border-radius: 1.25rem;
             margin-top: 2rem;
             border: 1px solid #d32f2f;
             max-width: 600px;
@@ -279,7 +281,7 @@
         
         .last-updated-text {
             text-align: center;
-            margin-top: 3rem;
+            margin-top: 3.5rem;
             font-size: 0.9rem;
             color: #6b7280;
         }
@@ -313,7 +315,7 @@
             }
             .sidebar-nav-item {
                 padding: 0.75rem 1rem;
-                font-size: 1.2rem;
+                font-size: 1rem; /* Adjusted font size for mobile */
             }
             .main-content {
                 padding: 1.5rem;
@@ -375,6 +377,7 @@
     </div>
 
     <script>
+        // Data URLs from Google Sheets
         const OVERVIEW_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT9p5Y3pAPNizOEYtkCm4afSajXjCIleDobCAbzQ3-VfSAMD3Mn2VsyCXDQgCZ-RpGtRVqhnxBgU8hE/pub?gid=2143739256&single=true&output=csv';
         const DAILY_METRICS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR5ve6vqp96t9mWt-s2DF1vzLPlamk3JskBjjrvEwB-K3HgaVpmYZcnPN11nzKSeFJ0QGa9AsCvGWyE/pub?gid=0&single=true&output=csv';
         
@@ -382,11 +385,20 @@
         let dailyChartInstance = null;
         let overviewChartInstance = null;
 
+        /**
+         * Displays a loading spinner in the specified container.
+         * @param {string} containerId - The ID of the container element.
+         */
         function showLoadingIndicator(containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
         }
 
+        /**
+         * Displays a failure message in the specified container.
+         * @param {string} containerId - The ID of the container element.
+         * @param {string} message - The error message to display.
+         */
         function showFailureMessage(containerId, message) {
             const container = document.getElementById(containerId);
             container.innerHTML = `
@@ -398,7 +410,11 @@
             `;
         }
         
-        // This is a more robust CSV parser
+        /**
+         * Parses CSV data into an array of objects.
+         * @param {string} csv - The raw CSV string.
+         * @returns {Array<Object>} An array of objects representing the CSV rows.
+         */
         function parseCSV(csv) {
             const lines = csv.split('\n').filter(line => line.trim() !== '');
             if (lines.length < 2) {
@@ -426,6 +442,11 @@
             return data;
         }
 
+        /**
+         * Fetches CSV data from a given URL.
+         * @param {string} url - The URL of the CSV file.
+         * @returns {Promise<string|null>} The CSV text on success, or null on failure.
+         */
         async function fetchCSVData(url) {
             console.log(`Attempting to fetch data from: ${url}`);
             try {
@@ -447,6 +468,10 @@
             }
         }
         
+        /**
+         * Renders the overview dashboard using parsed CSV data.
+         * @param {Array<Object>} data - The parsed data from the overview CSV.
+         */
         function renderOverviewDashboard(data) {
             const container = document.getElementById('overview-section');
             container.innerHTML = ''; // Clear previous content
@@ -472,14 +497,14 @@
                 topLevelBoxEl.innerHTML = `<h2 class="top-level-box-title">${topLevelBox}</h2>`;
                 
                 const subBoxesContainer = document.createElement('div');
-                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+                subBoxesContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"; // Increased gap
 
                 // Iterate through each sub-box and its metrics
                 for (const [subBoxHeader, metrics] of Object.entries(subBoxes)) {
                     const subBoxEl = document.createElement('div');
                     subBoxEl.className = "sub-box";
-                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-3"></div>`;
-                    const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                    subBoxEl.innerHTML = `<h3 class="sub-box-title">${subBoxHeader}</h3><div class="space-y-4"></div>`; // Increased space
+                    const metricsContainer = subBoxEl.querySelector('div.space-y-4');
                     
                     metrics.sort((a, b) => parseInt(a['Order']) - parseInt(b['Order'])).forEach(metric => {
                         const metricEl = document.createElement('div');
@@ -501,6 +526,10 @@
             }
         }
         
+        /**
+         * Renders the daily metrics dashboard using parsed CSV data.
+         * @param {Array<Object>} data - The parsed data from the daily metrics CSV.
+         */
         function renderDailyMetricsDashboard(data) {
             const container = document.getElementById('daily-section');
             container.innerHTML = '';
@@ -527,7 +556,7 @@
                 const iosData = dailyUserChartData.map(d => d['iOS']);
                 
                 const chartBox = document.createElement('div');
-                chartBox.className = "sub-box mb-8";
+                chartBox.className = "sub-box mb-10"; // Increased bottom margin
                 chartBox.innerHTML = `
                     <h3 class="sub-box-title">Daily User Trend</h3>
                     <div class="chart-container">
@@ -604,7 +633,7 @@
             
             // Now render the individual daily metrics in sub-boxes
             const dailyMetricsContainer = document.createElement('div');
-            dailyMetricsContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+            dailyMetricsContainer.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"; // Increased gap
 
             // Group by metric name
             const groupedMetrics = data.reduce((acc, row) => {
@@ -619,8 +648,8 @@
             for (const [metricName, entries] of Object.entries(groupedMetrics)) {
                 const subBoxEl = document.createElement('div');
                 subBoxEl.className = "sub-box";
-                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3><div class="space-y-3"></div>`;
-                const metricsContainer = subBoxEl.querySelector('div.space-y-3');
+                subBoxEl.innerHTML = `<h3 class="sub-box-title">${metricName}</h3><div class="space-y-4"></div>`;
+                const metricsContainer = subBoxEl.querySelector('div.space-y-4');
                 
                 // Sort to show the latest date first
                 entries.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
@@ -647,6 +676,11 @@
             topLevelBoxEl.appendChild(dailyMetricsContainer);
         }
         
+        /**
+         * Handles navigation between different sections of the dashboard.
+         * @param {Array<Object>} overviewData - The data for the overview section.
+         * @param {Array<Object>} dailyMetricsData - The data for the daily metrics section.
+         */
         function handleNavigation(overviewData, dailyMetricsData) {
             const navItems = document.querySelectorAll('.sidebar-nav-item');
             const sections = document.querySelectorAll('.section-container');
@@ -668,6 +702,9 @@
             });
         }
         
+        /**
+         * Updates the "Last updated" footer with the current time.
+         */
         function updateLastUpdatedTime() {
             const now = new Date();
             const formattedTime = now.toLocaleDateString('en-US', {
@@ -681,6 +718,9 @@
             document.getElementById('last-updated-footer').textContent = `Last updated: ${formattedTime}`;
         }
 
+        /**
+         * Initializes the dashboard by fetching data and rendering the initial view.
+         */
         async function initializeDashboard() {
             showLoadingIndicator('overview-section');
             showLoadingIndicator('daily-section');
@@ -703,4 +743,3 @@
     </script>
 </body>
 </html>
-
