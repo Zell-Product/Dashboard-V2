@@ -37,8 +37,8 @@
         }
         html {
             scroll-behavior: smooth;
-            height: 100%; /* ADDED */
-            overflow: hidden; /* ADDED */
+            height: 100%; /* FIX: Set HTML height for proper container sizing */
+            overflow: hidden; /* FIX: Prevent external scrollbars */
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -47,10 +47,8 @@
             padding-top: var(--header-height);
             display: flex; /* REQUIRED */
             flex-direction: column; /* REQUIRED */
-            /* min-height: 100vh; CHANGED */
-            height: 100%; /* CHANGED */
+            height: 100%; /* FIX: Set body height to 100% */
             overflow: hidden; /* Prevent body scroll */
-            /* Added transition for padding change */
             transition: padding-top 0.3s ease;
          }
          body::-webkit-scrollbar { width: 8px; }
@@ -61,7 +59,7 @@
         .fa-sync-alt.animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-         /* Glassy Sticky Header */
+         /* Glassy Sticky Header (Dashboard) */
         #appHeader {
             position: sticky; top: 0; left: 0; right: 0; z-index: 50;
             background-color: var(--header-bg);
@@ -80,7 +78,7 @@
              width: 100%; max-width: 1152px; /* max-w-6xl */
              margin-left: auto; margin-right: auto;
              padding-left: 1rem; padding-right: 1rem; padding-bottom: 2rem;
-             opacity: 0; transition: opacity 0.5s ease, max-width 0.3s ease, padding 0.3s ease; /* Added transitions */
+             opacity: 0; transition: opacity 0.5s ease, max-width 0.3s ease, padding 0.3s ease;
              min-height: 0; /* REQUIRED: Prevent flex item overflow */
              overflow-y: auto; /* Allow scrolling ONLY within this container */
          }
@@ -94,11 +92,13 @@
         }
          /* Page content - CRITICAL FOR LAYOUT */
         .page-content {
-             padding-top: 1.5rem; /* Reduced top padding */
-             padding-bottom: 0; /* Remove bottom padding */
+             padding-top: 1.5rem;
+             padding-bottom: 0;
              flex-grow: 1; /* REQUIRED: Allow page content to grow */
              display: flex; flex-direction: column;
              min-height: 0; /* REQUIRED: Prevent flex item overflow */
+             /* CRITICAL FIX: Ensure the dashboard page itself uses up ALL vertical space */
+             min-height: calc(100vh - var(--header-height) - 2rem); /* 2rem is bottom padding of appContainer */
          }
 
         /* Accordion Styles */
@@ -127,7 +127,7 @@
             border-radius: 1rem; margin-bottom: 1rem; overflow: hidden;
         }
 
-        /* Table Styles */
+        /* Table Styles (Restored) */
         .chapter-table { width: 100%; border-collapse: separate; border-spacing: 0; }
         .chapter-table th, .chapter-table td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 0.875rem; }
         .chapter-table th { background-color: transparent; color: var(--text-muted-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; border-bottom-width: 1px; }
@@ -148,36 +148,67 @@
         .view-report-button:hover:not(:disabled) { background-color: #4341a4; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(88, 86, 214, 0.2); }
         .no-report-span { background-color: #e5e7eb; color: #4b5563; font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: not-allowed; display: inline-block; }
 
-        /* Report Viewer Styles - CRITICAL FOR LAYOUT */
+
+        /* Footer - Now explicitly positioned */
+        #appFooter {
+            margin-top: auto; /* Push footer to bottom */
+            color: var(--text-muted-color); font-size: 0.8rem;
+            border-top: 1px solid var(--card-border); padding-top: 1.5rem; text-align: center;
+            opacity: 0.6;
+            flex-shrink: 0; /* Prevent footer from shrinking */
+             /* FIX: Ensure footer starts at bottom of appContainer's scrollable area */
+             align-self: flex-end;
+             width: 100%; /* Ensure it spans the full width of the container */
+             max-width: 1152px; /* Match app container width */
+             margin-left: auto; margin-right: auto; /* Center within flex */
+             padding-left: 1rem; padding-right: 1rem;
+             box-sizing: border-box; /* Include padding in width */
+             padding-bottom: 1.5rem; /* Add some bottom padding */
+        }
+          @media (min-width: 768px) { #appFooter { padding-left: 2rem; padding-right: 2rem;} }
+         /* Hide footer when report page is active */
+         #page-report-viewer.active ~ #appFooter { display: none; }
+
+
+        /* Report Viewer Styles */
         .page { display: none; }
-        .page.active { display: block; flex-grow: 1; display: flex; flex-direction: column; } /* Ensure active page grows */
+        .page.active { display: block; flex-grow: 1; display: flex; flex-direction: column; }
          #page-report-viewer {
-             padding-top: 0; /* MODIFIED: was 1.5rem via .page-content, now 0 */
-             flex-grow: 1; /* Allow this page to grow */
-             display: flex; /* Use flex */
+             padding-top: 0;
+             flex-grow: 1;
+             display: flex;
              flex-direction: column;
          }
-         #page-report-viewer > .report-viewer-inner-container { /* Target the inner flex container */
-              flex-grow: 1; /* Allow inner container to grow */
-              min-height: 0; /* Prevent overflow issues in flex children */
-              display: flex; /* Ensure it's also a flex container */
+         #page-report-viewer > .report-viewer-inner-container {
+              flex-grow: 1;
+              min-height: 0;
+              display: flex;
               flex-direction: column;
          }
         .report-viewer-header {
-             display: flex; align-items: center; justify-content: space-between;
-             padding: 0.5rem 1rem; /* CHANGED: Was 0.75rem 0. Moves to top, adds horizontal padding */
+             display: flex; align-items: center;
+             justify-content: space-between;
+             padding: 0.5rem 1rem;
              flex-shrink: 0;
-             height: auto; /* CHANGED: Was 48px. Let padding define height. */
-             box-sizing: border-box; /* ADDED: For accurate padding calculation */
+             height: auto;
+             box-sizing: border-box;
+             position: relative; /* Needed for absolute positioning of title */
          }
+         #page-report-viewer .report-viewer-header h2 {
+             position: absolute;
+             left: 50%;
+             transform: translateX(-50%);
+             max-width: calc(100% - 100px);
+             text-align: center;
+         }
+
         .report-iframe-wrapper {
             flex-grow: 1; border-radius: 1rem; overflow: hidden;
             background-color: #fff; border: 1px solid var(--card-border);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
-            /* display: flex; align-items: center; justify-content: center; <-- REMOVED */
             position: relative;
-            min-height: 0; /* Prevent overflow */
-            transition: all 0.3s ease; /* ADDED: For smooth transition */
+            min-height: 0;
+            transition: all 0.3s ease;
         }
         .report-iframe-wrapper .iframe-loader {
              position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -186,7 +217,28 @@
         .report-iframe { width: 100%; height: 100%; border: none; }
 
 
-         /* === EXACT Glassy Button Styles from Product Dashboard Light Mode === */
+        /* --- Full Screen Report Viewer Overrides --- */
+        #appContainer:has(#page-report-viewer.active) {
+            max-width: none;
+            padding-left: 0;
+            padding-right: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+        #appContainer:has(#page-report-viewer.active) .report-iframe-wrapper {
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+        @media (min-width: 768px) {
+            #appContainer:has(#page-report-viewer.active) .report-viewer-header {
+                 padding-left: 2rem;
+                 padding-right: 2rem;
+            }
+        }
+        /* --- End Full Screen Report Viewer Overrides --- */
+
+        /* === EXACT Glassy Button Styles from Product Dashboard Light Mode === */
          .glassy-button {
              background-color: var(--button-bg); color: var(--text-color); border: 1px solid var(--button-border);
              box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.7);
@@ -220,65 +272,16 @@
         .refresh-btn i { margin: 0; font-size: 1.1rem; }
          /* --- End Glassy Button Styles --- */
 
+        /* --- Other Styles --- (Accordion, Loader etc. - keeping brief for file size) */
+        .book-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); overflow: hidden; flex-shrink: 0; }
+        .book-header, .module-header { padding: 1rem 1.5rem; cursor: pointer; transition: background-color 0.2s ease; display: flex; justify-content: space-between; align-items: center; }
+        .book-content, .module-content { transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1); max-height: 0; overflow: hidden; background-color: var(--sub-box-bg); padding: 0 1rem; }
+        .book-content.open, .module-content.open { max-height: 10000px; padding: 1rem; }
 
-        /* === Updated Loading Screen Styles === */
-         .full-page-loader {
-             display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column;
-             background-color: var(--bg-color); position: fixed; inset: 0; z-index: 2000;
-             transition: opacity 0.5s ease-in-out;
-             opacity: 1; pointer-events: auto;
-         }
-         .full-page-loader.hidden { opacity: 0; pointer-events: none; }
-         #loading-text-container span {
-             opacity: 0; animation: fadeInOut 2s ease-in-out infinite;
-             font-size: 1.25rem; font-weight: 500; color: var(--text-muted-color);
-         }
-         @keyframes fadeInOut { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-        /* === End Updated Loader === */
-
-         /* Footer - Now explicitly positioned */
-        #appFooter {
-            margin-top: auto; /* Push footer to bottom */
-            color: var(--text-muted-color); font-size: 0.8rem;
-            border-top: 1px solid var(--card-border); padding-top: 1.5rem; text-align: center;
-            opacity: 0.6;
-            flex-shrink: 0; /* Prevent footer from shrinking */
-            width: 100%; /* Ensure footer takes full width */
-            padding-bottom: 1.5rem; /* Add some bottom padding */
-             max-width: 1152px; /* Match app container width */
-             margin-left: auto; margin-right: auto; /* Center within flex */
-             padding-left: 1rem; padding-right: 1rem;
-             box-sizing: border-box; /* Include padding in width */
-        }
-          @media (min-width: 768px) { #appFooter { padding-left: 2rem; padding-right: 2rem;} }
-         /* Hide footer when report page is active */
-         #page-report-viewer.active ~ #appFooter { display: none; }
-
-
-        /* --- ADDED: Full Screen Report Viewer Overrides --- */
-        /* When report is active, make container full-width and remove padding */
-        #appContainer:has(#page-report-viewer.active) {
-            max-width: none;
-            padding-left: 0;
-            padding-right: 0;
-            padding-bottom: 0; /* Remove bottom padding */
-            overflow: hidden; /* Prevent inner scroll */
-        }
-        /* When report is active, make iframe edge-to-edge */
-        #appContainer:has(#page-report-viewer.active) .report-iframe-wrapper {
-            border-radius: 0;
-            border: none;
-            box-shadow: none;
-        }
-        /* When report is active, add responsive padding back to header */
-        @media (min-width: 768px) {
-            #appContainer:has(#page-report-viewer.active) .report-viewer-header {
-                 padding-left: 2rem;
-                 padding-right: 2rem;
-            }
-        }
-        /* --- End Full Screen Report Viewer Overrides --- */
-
+        .full-page-loader { display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; background-color: var(--bg-color); position: fixed; inset: 0; z-index: 2000; transition: opacity 0.5s ease-in-out; opacity: 1; pointer-events: auto; }
+        .full-page-loader.hidden { opacity: 0; pointer-events: none; }
+        .spinner { border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 1s linear infinite; }
+        /* --- End Other Styles --- */
 
     </style>
 </head>
@@ -293,16 +296,22 @@
 
     <!-- Sticky Header -->
     <header id="appHeader" class="flex items-center justify-between">
-        <h1 class="text-xl md:text-2xl font-bold text-gray-900">Fintech QC Dashboard</h1>
-         <!-- Apply glassy-button style, icon only -->
-        <button id="refresh-button" class="refresh-btn glassy-button">
+         <!-- Greeting/Left element container -->
+        <div class="flex items-center">
+            <span class="text-sm font-medium text-gray-500 mr-4 hidden sm:inline">Welcome!</span>
+        </div>
+        <!-- Centered Title -->
+        <h1 class="text-xl md:text-2xl font-bold text-gray-900 absolute left-1/2 transform -translate-x-1/2">
+            Fintech QC Dashboard
+        </h1>
+         <!-- Refresh Button (Right) -->
+        <button id="refresh-button" class="refresh-btn glassy-button z-10">
             <i class="fas fa-sync-alt"></i>
             <span class="spinner"></span>
         </button>
     </header>
 
     <!-- Main Content Area -->
-     <!-- Corrected container structure for full height -->
     <div id="appContainer" class="flex flex-col flex-grow">
         <!-- Error State (Moved near top) -->
         <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-4 rounded-lg relative my-6 hidden flex-shrink-0" role="alert">
@@ -317,7 +326,8 @@
         -->
         <div id="page-dashboard" class="page active page-content">
             <!-- Dashboard Content Area -->
-            <div id="dashboard-content" class="space-y-6">
+            <!-- We need the inner content to grow to push the footer down. -->
+            <div id="dashboard-content" class="space-y-6 flex-grow">
                 <!-- Content generated by JS -->
                 <div class="text-center p-12 text-gray-500">Building dashboard...</div>
             </div>
@@ -329,15 +339,15 @@
         ====================================================================
         -->
         <div id="page-report-viewer" class="page page-content" style="display: none;">
-             <!-- Corrected inner container for flex grow - REMOVED h-full -->
+             <!-- Corrected inner container for flex grow -->
             <div class="report-viewer-inner-container flex flex-col flex-grow" style="min-height: 0;">
-                <!-- Header with Back Button -->
-                <div class="report-viewer-header flex-shrink-0">
-                     <!-- Apply glassy-button style, icon only -->
-                    <button id="back-to-dashboard-button" class="back-button glassy-button">
+                <!-- Header with Back Button and Centered Title -->
+                <div class="report-viewer-header flex-shrink-0 relative">
+                    <button id="back-to-dashboard-button" class="back-button glassy-button z-10">
                         <i class="fas fa-arrow-left"></i>
                     </button>
-                    <h2 id="report-title" class="text-xl font-semibold text-gray-700 truncate text-right ml-4">
+                    <!-- Title is centered via CSS -->
+                    <h2 id="report-title" class="text-xl font-semibold text-gray-700 truncate">
                         Loading Report...
                     </h2>
                 </div>
@@ -376,7 +386,6 @@
         const errorText = document.getElementById('error-text');
         const dashboardContent = document.getElementById('dashboard-content');
         const refreshButton = document.getElementById('refresh-button');
-        // const refreshText = document.getElementById('refresh-text'); // Removed
         const refreshSpinner = refreshButton.querySelector('.spinner');
         const backToDashboardButton = document.getElementById('back-to-dashboard-button');
         const reportTitle = document.getElementById('report-title');
@@ -403,11 +412,11 @@
         // --- Page Navigation ---
         function showDashboardPage() {
             pageReportViewer.style.display = 'none';
-             pageReportViewer.classList.remove('active'); // Ensure active class is removed
+             pageReportViewer.classList.remove('active');
             pageDashboard.style.display = 'block';
-             pageDashboard.classList.add('active'); // Add active class
-            appHeader.style.display = 'flex'; // Use flex for header
-            document.body.style.paddingTop = 'var(--header-height)'; // <<< ADDED: Restore body padding
+             pageDashboard.classList.add('active');
+            appHeader.style.display = 'flex';
+            document.body.style.paddingTop = 'var(--header-height)'; // RESTORE body padding
             reportIframe.removeEventListener('load', handleIframeLoad);
             reportIframe.srcdoc = '';
             reportIframe.src = 'about:blank';
@@ -479,11 +488,11 @@
 
         function showReportPage(fileId, title) {
             pageDashboard.style.display = 'none';
-             pageDashboard.classList.remove('active'); // Remove active class
-            pageReportViewer.style.display = 'flex'; // Use flex for this page
-             pageReportViewer.classList.add('active'); // Add active class
-            appHeader.style.display = 'none'; // Use display none
-            document.body.style.paddingTop = '0'; // <<< ADDED: Remove body padding
+             pageDashboard.classList.remove('active');
+            pageReportViewer.style.display = 'flex';
+             pageReportViewer.classList.add('active');
+            appHeader.style.display = 'none';
+            document.body.style.paddingTop = '0'; // REMOVE body padding
 
             const decodedTitle = decodeHtmlEntities(title);
             reportTitle.textContent = `Report: ${decodedTitle}`;
@@ -543,7 +552,7 @@
                 if (!response.ok) {
                      const errorText = await response.text();
                      if (errorText.includes("ScriptError")) throw new Error(`Apps Script Error. Check logs.`);
-                     if (errorText.includes("Authorization needed")) throw newError(`Apps Script Authorization Error. Re-deploy.`);
+                     if (errorText.includes("Authorization needed")) throw new Error(`Apps Script Authorization Error. Re-deploy.`);
                      throw new Error(`Server error (${response.status}): ${errorText || response.statusText}`);
                 }
                 const contentType = response.headers.get("content-type");
@@ -760,6 +769,3 @@
     </script>
 </body>
 </html>
-
-
-
