@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fintech QC Dashboard</title>
-    <link rel="icon" type="image/png" href="favicon.png"> <!-- FIX: Added Favicon Link -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -150,23 +149,10 @@
         .no-report-span { background-color: #e5e7eb; color: #4b5563; font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: not-allowed; display: inline-block; }
 
 
-        /* Footer - Now explicitly positioned */
+        /* --- MODIFICATION 1: Footer removed --- */
         #appFooter {
-            margin-top: auto; /* Push footer to bottom */
-            color: var(--text-muted-color); font-size: 0.8rem;
-            border-top: 1px solid var(--card-border); padding-top: 1.5rem; text-align: center;
-            opacity: 0.6;
-            flex-shrink: 0; /* Prevent footer from shrinking */
-             /* FIX: Ensure footer starts at bottom of appContainer's scrollable area */
-             align-self: flex-end;
-             width: 100%; /* Ensure it spans the full width of the container */
-             max-width: 1152px; /* Match app container width */
-             margin-left: auto; margin-right: auto; /* Center within flex */
-             padding-left: 1rem; padding-right: 1rem;
-             box-sizing: border-box; /* Include padding in width */
-             padding-bottom: 1.5rem; /* Add some bottom padding */
+           display: none !important;
         }
-          @media (min-width: 768px) { #appFooter { padding-left: 2rem; padding-right: 2rem;} }
          /* Hide footer when report page is active */
          #page-report-viewer.active ~ #appFooter { display: none; }
 
@@ -366,10 +352,12 @@
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- --- MODIFICATION 1: Footer HTML removed --- -->
+        <!--
         <footer id="appFooter">
             Fintech QC Dashboard - Internal Tool
         </footer>
+        -->
     </div>
 
 
@@ -404,10 +392,12 @@
                 hideLoader();
                 return;
             }
-            loadData();
+             // *** MODIFICATION: Load data using the default action first ***
+            loadData(false); // false means do not clear cache on initial load
         });
 
-        refreshButton.addEventListener('click', loadData);
+        // *** MODIFICATION: Pass a flag to loadData ***
+        refreshButton.addEventListener('click', () => loadData(true)); // true means clear cache
         backToDashboardButton.addEventListener('click', showDashboardPage);
 
         // --- Page Navigation ---
@@ -466,9 +456,9 @@
                                 if (targetElement) {
                                     console.log(`Scrolling to element: #${targetId}`);
                                     targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                } else {
+                                 } else {
                                     console.warn(`Target element not found in iframe: #${targetId}`);
-                                }
+                                 }
                             }
                         }, false);
                     });
@@ -544,12 +534,18 @@
         }
 
         // --- Data Loading & Dashboard Building ---
-        async function loadData() {
+        // *** MODIFICATION: Accept a flag to clear the cache ***
+        async function loadData(clearCache = false) {
             setLoading(true);
             showError(null);
 
+            // *** MODIFICATION: Choose action based on flag ***
+            const action = clearCache ? 'clearCacheAndGetData' : 'getDashboardData';
+            
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=getDashboardData&cachebust=${new Date().getTime()}`);
+                // *** MODIFICATION: Use the new action in the URL ***
+                const response = await fetch(`${WEB_APP_URL}?action=${action}&cachebust=${new Date().getTime()}`);
+                
                 if (!response.ok) {
                      const errorText = await response.text();
                      if (errorText.includes("ScriptError")) throw new Error(`Apps Script Error. Check logs.`);
@@ -571,6 +567,14 @@
                     console.log('Processed Book Structure:', bookStructure);
                     console.log('Processed QC Summaries Map:', qcSummaries);
                     buildDashboard();
+
+                    // *** ADDED: Also reload logger dropdowns if cache was cleared ***
+                    if (clearCache) {
+                        // This is a conceptual addition. To *actually* update the logger,
+                        // the logger page would need to be reloaded or also re-fetch its structure.
+                        // This button only reloads the dashboard's data.
+                        console.log("Dashboard refreshed. Logger will get new data on its next load.");
+                    }
                 } else {
                     throw new Error(data.message || "Script returned error status.");
                 }
@@ -710,16 +714,19 @@
                     }
                 });
             });
-            // Auto-open first book and first module if they exist
-            const firstBookContent = dashboardContent.querySelector('.book-content');
-            const firstBookHeader = dashboardContent.querySelector('.book-header');
-            if (firstBookContent) firstBookContent.classList.add('open');
-            if (firstBookHeader) firstBookHeader.querySelector('.chevron')?.classList.add('rotate-180');
+            
+            // --- MODIFICATION 2: Removed auto-open block ---
+            // // Auto-open first book and first module if they exist
+            // const firstBookContent = dashboardContent.querySelector('.book-content');
+            // const firstBookHeader = dashboardContent.querySelector('.book-header');
+            // if (firstBookContent) firstBookContent.classList.add('open');
+            // if (firstBookHeader) firstBookHeader.querySelector('.chevron')?.classList.add('rotate-180');
 
-            const firstModuleContent = firstBookContent?.querySelector('.module-content');
-            const firstModuleHeader = firstBookContent?.querySelector('.module-header');
-            if (firstModuleContent) firstModuleContent.classList.add('open');
-            if (firstModuleHeader) firstModuleHeader.querySelector('.chevron')?.classList.add('rotate-180');
+            // const firstModuleContent = firstBookContent?.querySelector('.module-content');
+            // const firstModuleHeader = firstBookContent?.querySelector('.module-header');
+            // if (firstModuleContent) firstModuleContent.classList.add('open');
+            // if (firstModuleHeader) firstModuleHeader.querySelector('.chevron')?.classList.add('rotate-180');
+            // --- END MODIFICATION ---
         }
 
 
@@ -770,3 +777,4 @@
     </script>
 </body>
 </html>
+
